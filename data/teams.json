@@ -1,0 +1,451 @@
+{
+  "SNACKOVERFLOW": {
+    "teamId": "SNACKOVERFLOW",
+    "stage": 6,
+    "gameHalted": false,
+    "haltReason": null,
+    "haltTimestamp": null,
+    "startTime": 1794734102856,
+    "timerSeconds": 3179,
+    "finalizations": [
+      {
+        "id": "02",
+        "name": "Prof. Anand Rao",
+        "type": "MAIN",
+        "timestamp": "14:46:10 IST",
+        "slot": 1,
+        "isCorrect": true
+      },
+      {
+        "id": "03",
+        "name": "Kavya Sethi",
+        "type": "DECOY",
+        "timestamp": "14:47:56 IST",
+        "slot": 2,
+        "isCorrect": false
+      },
+      {
+        "id": "08",
+        "name": "K. Verma",
+        "type": "MAIN",
+        "timestamp": "14:50:49 IST",
+        "slot": 3,
+        "isCorrect": true
+      }
+    ],
+    "finalMurderer": "K. Verma",
+    "finalReasoning": "1) flight booked but not boarded\n2) very sus\n3) sus person",
+    "finalSubmissionTimestamp": "14:51:26 IST",
+    "wipeStopped": true,
+    "events": [
+      {
+        "ts": 1794734102871,
+        "iso": "2026-11-15T09:15:02.871Z",
+        "clock": "14:45:02 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "LOGIN_SUCCESS",
+        "message": "Team authenticated into the laptop.",
+        "meta": {
+          "startTime": 1794734102856
+        }
+      },
+      {
+        "ts": 1794734170859,
+        "iso": "2026-11-15T09:16:10.859Z",
+        "clock": "14:46:10 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 1 finalized: Prof. Anand Rao (MAIN)",
+        "meta": {
+          "id": "02",
+          "name": "Prof. Anand Rao",
+          "type": "MAIN",
+          "slot": 1,
+          "timestamp": "14:46:10 IST",
+          "isCorrect": true,
+          "stage": "DEBUG (RECOVERY_CODE)"
+        }
+      },
+      {
+        "ts": 1794734232320,
+        "iso": "2026-11-15T09:17:12.320Z",
+        "clock": "14:47:12 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "RECOVERY_CODE_SOLVED",
+        "message": "recovery_code debugging puzzle solved — replay archive reconstructed.",
+        "meta": {}
+      },
+      {
+        "ts": 1794734276151,
+        "iso": "2026-11-15T09:17:56.151Z",
+        "clock": "14:47:56 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 2 finalized: Kavya Sethi (DECOY)",
+        "meta": {
+          "id": "03",
+          "name": "Kavya Sethi",
+          "type": "DECOY",
+          "slot": 2,
+          "timestamp": "14:47:56 IST",
+          "isCorrect": false,
+          "stage": "TRACE (NETTRACE)"
+        }
+      },
+      {
+        "ts": 1794734393996,
+        "iso": "2026-11-15T09:19:53.996Z",
+        "clock": "14:49:53 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "NETTRACE_SOLVED",
+        "message": "nettrace / IP game solved — origin WS-14 identified. CCTV unlocked.",
+        "meta": {}
+      },
+      {
+        "ts": 1794734420219,
+        "iso": "2026-11-15T09:20:20.219Z",
+        "clock": "14:50:20 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "CCTV_CAM_VIEWED",
+        "message": "CAM01 viewed at least once.",
+        "meta": {
+          "camId": "CAM01"
+        }
+      },
+      {
+        "ts": 1794734430101,
+        "iso": "2026-11-15T09:20:30.101Z",
+        "clock": "14:50:30 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "CCTV_CAM_VIEWED",
+        "message": "CAM02 viewed at least once.",
+        "meta": {
+          "camId": "CAM02"
+        }
+      },
+      {
+        "ts": 1794734449627,
+        "iso": "2026-11-15T09:20:49.627Z",
+        "clock": "14:50:49 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 3 finalized: K. Verma (MAIN)",
+        "meta": {
+          "id": "08",
+          "name": "K. Verma",
+          "type": "MAIN",
+          "slot": 3,
+          "timestamp": "14:50:49 IST",
+          "isCorrect": true,
+          "stage": "FINAL INVESTIGATION"
+        }
+      },
+      {
+        "ts": 1794734486639,
+        "iso": "2026-11-15T09:21:26.639Z",
+        "clock": "14:51:26 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "FINAL_ACCUSATION_SUBMITTED",
+        "message": "Final suspect submitted: K. Verma",
+        "meta": {
+          "murderer": "K. Verma",
+          "reasoning": "1) flight booked but not boarded\n2) very sus\n3) sus person",
+          "timestamp": "14:51:26 IST",
+          "submissionStatus": "SUBMITTED"
+        }
+      },
+      {
+        "ts": 1794734520488,
+        "iso": "2026-11-15T09:22:00.488Z",
+        "clock": "14:52:00 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "RAM_PC_LOGIN_SUCCESS",
+        "message": "WS-14 (Ram Sharma) login successful at 14:52:00 IST.",
+        "meta": {
+          "timestamp": "14:52:00 IST"
+        }
+      },
+      {
+        "ts": 1794734524448,
+        "iso": "2026-11-15T09:22:04.448Z",
+        "clock": "14:52:04 IST",
+        "teamId": "SNACKOVERFLOW",
+        "type": "WIPE_STOPPED",
+        "message": "Data wipe stopped at 14:52:04 IST. Recovery initiated.",
+        "meta": {
+          "timestamp": "14:52:04 IST"
+        }
+      }
+    ],
+    "lastEvent": {
+      "ts": 1794734524448,
+      "iso": "2026-11-15T09:22:04.448Z",
+      "clock": "14:52:04 IST",
+      "teamId": "SNACKOVERFLOW",
+      "type": "WIPE_STOPPED",
+      "message": "Data wipe stopped at 14:52:04 IST. Recovery initiated.",
+      "meta": {
+        "timestamp": "14:52:04 IST"
+      }
+    },
+    "lastUpdate": "14:52:04 IST"
+  },
+  "HELOO": {
+    "teamId": "HELOO",
+    "stage": 1,
+    "gameHalted": false,
+    "haltReason": null,
+    "haltTimestamp": null,
+    "startTime": 1794735391566,
+    "timerSeconds": 1154,
+    "finalizations": [
+      {
+        "id": "02",
+        "name": "Prof. Anand Rao",
+        "type": "MAIN",
+        "timestamp": "15:06:32 IST",
+        "slot": 1,
+        "isCorrect": true
+      },
+      {
+        "id": "05",
+        "name": "Divya Mehta",
+        "type": "MAIN",
+        "timestamp": "15:06:32 IST",
+        "slot": 2,
+        "isCorrect": true
+      },
+      {
+        "id": "01",
+        "name": "Ram Sharma",
+        "type": "MAIN",
+        "timestamp": "15:06:32 IST",
+        "slot": 3,
+        "isCorrect": true
+      }
+    ],
+    "finalMurderer": null,
+    "finalReasoning": null,
+    "finalSubmissionTimestamp": null,
+    "wipeStopped": false,
+    "events": [
+      {
+        "ts": 1794735185463,
+        "iso": "2026-11-15T09:33:05.463Z",
+        "clock": "15:03:05 IST",
+        "teamId": "HELOO",
+        "type": "TAB_SWITCH_VIOLATION",
+        "message": "Team switched tabs or minimized the browser at 15:03:05 IST. Game halted pending GM review.",
+        "meta": {
+          "timestamp": "15:03:05 IST",
+          "reason": "TAB / WINDOW SWITCH",
+          "stage": "FINAL INVESTIGATION",
+          "statusBefore": "ACTIVE",
+          "statusAfter": "GAME HALTED"
+        }
+      },
+      {
+        "ts": 1794735203759,
+        "iso": "2026-11-15T09:33:23.759Z",
+        "clock": "15:03:23 IST",
+        "teamId": "HELOO",
+        "type": "GM_RESUME",
+        "message": "GM cleared halt state for Team HELOO. Game resumed.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794735203766,
+        "iso": "2026-11-15T09:33:23.766Z",
+        "clock": "15:03:23 IST",
+        "teamId": "HELOO",
+        "type": "VIOLATION_CLEARED",
+        "message": "GM cleared the tab-switch violation and resumed the game.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794735203774,
+        "iso": "2026-11-15T09:33:23.774Z",
+        "clock": "15:03:23 IST",
+        "teamId": "HELOO",
+        "type": "GM_RESUME",
+        "message": "GM cleared halt state for Team HELOO. Game resumed.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794735378696,
+        "iso": "2026-11-15T09:36:18.696Z",
+        "clock": "15:06:18 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: SLOT3",
+        "meta": {}
+      },
+      {
+        "ts": 1794735380465,
+        "iso": "2026-11-15T09:36:20.465Z",
+        "clock": "15:06:20 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: FINAL",
+        "meta": {}
+      },
+      {
+        "ts": 1794735385128,
+        "iso": "2026-11-15T09:36:25.128Z",
+        "clock": "15:06:25 IST",
+        "teamId": "HELOO",
+        "type": "WIPE_STOPPED",
+        "message": "Data wipe stopped at 15:06:25 IST. Recovery initiated.",
+        "meta": {
+          "timestamp": "15:06:25 IST"
+        }
+      },
+      {
+        "ts": 1794735385131,
+        "iso": "2026-11-15T09:36:25.131Z",
+        "clock": "15:06:25 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: SOLVED",
+        "meta": {}
+      },
+      {
+        "ts": 1794735387109,
+        "iso": "2026-11-15T09:36:27.109Z",
+        "clock": "15:06:27 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: NETTRACE_CCTV",
+        "meta": {}
+      },
+      {
+        "ts": 1794735388461,
+        "iso": "2026-11-15T09:36:28.461Z",
+        "clock": "15:06:28 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: SLOT1",
+        "meta": {}
+      },
+      {
+        "ts": 1794735389836,
+        "iso": "2026-11-15T09:36:29.836Z",
+        "clock": "15:06:29 IST",
+        "teamId": "HELOO",
+        "type": "GAME_RESET",
+        "message": "GM reset the station for the next team.",
+        "meta": {}
+      },
+      {
+        "ts": 1794735391567,
+        "iso": "2026-11-15T09:36:31.567Z",
+        "clock": "15:06:31 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: SLOT2",
+        "meta": {}
+      },
+      {
+        "ts": 1794735392973,
+        "iso": "2026-11-15T09:36:32.973Z",
+        "clock": "15:06:32 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: SLOT3",
+        "meta": {}
+      },
+      {
+        "ts": 1794736697750,
+        "iso": "2026-11-15T09:58:17.750Z",
+        "clock": "15:28:17 IST",
+        "teamId": "HELOO",
+        "type": "TAB_SWITCH_VIOLATION",
+        "message": "Team switched tabs or minimized the browser at 15:28:17 IST. Game halted pending GM review.",
+        "meta": {
+          "timestamp": "15:28:17 IST",
+          "reason": "TAB / WINDOW SWITCH",
+          "stage": "FINAL INVESTIGATION",
+          "statusBefore": "ACTIVE",
+          "statusAfter": "GAME HALTED"
+        }
+      },
+      {
+        "ts": 1794737820318,
+        "iso": "2026-11-15T10:17:00.318Z",
+        "clock": "15:47:00 IST",
+        "teamId": "HELOO",
+        "type": "GM_RESUME",
+        "message": "GM cleared halt state for Team HELOO. Game resumed.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794737820324,
+        "iso": "2026-11-15T10:17:00.324Z",
+        "clock": "15:47:00 IST",
+        "teamId": "HELOO",
+        "type": "VIOLATION_CLEARED",
+        "message": "GM cleared the tab-switch violation and resumed the game.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794737820336,
+        "iso": "2026-11-15T10:17:00.336Z",
+        "clock": "15:47:00 IST",
+        "teamId": "HELOO",
+        "type": "GM_RESUME",
+        "message": "GM cleared halt state for Team HELOO. Game resumed.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      },
+      {
+        "ts": 1794737838517,
+        "iso": "2026-11-15T10:17:18.517Z",
+        "clock": "15:47:18 IST",
+        "teamId": "HELOO",
+        "type": "TAB_SWITCH_VIOLATION",
+        "message": "Team switched tabs or minimized the browser at 15:47:18 IST. Game halted pending GM review.",
+        "meta": {
+          "timestamp": "15:47:18 IST",
+          "reason": "TAB / WINDOW SWITCH",
+          "stage": "FINAL INVESTIGATION",
+          "statusBefore": "ACTIVE",
+          "statusAfter": "GAME HALTED"
+        }
+      },
+      {
+        "ts": 1794746170835,
+        "iso": "2026-11-15T12:36:10.835Z",
+        "clock": "18:06:10 IST",
+        "teamId": "HELOO",
+        "type": "GM_RESUME",
+        "message": "GM cleared halt state for Team HELOO. Game resumed.",
+        "meta": {
+          "organizerAction": "RESUME_GAME"
+        }
+      }
+    ],
+    "lastEvent": {
+      "ts": 1794746170835,
+      "iso": "2026-11-15T12:36:10.835Z",
+      "clock": "18:06:10 IST",
+      "teamId": "HELOO",
+      "type": "GM_RESUME",
+      "message": "GM cleared halt state for Team HELOO. Game resumed.",
+      "meta": {
+        "organizerAction": "RESUME_GAME"
+      }
+    },
+    "lastUpdate": "18:06:10 IST"
+  }
+}
