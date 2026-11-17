@@ -3525,3 +3525,267 @@ tr.highlight-row.error td { background: rgba(239,68,68,0.12); color: var(--accen
   text-align: center; margin-top: 24px; font-size: 22px; letter-spacing: 1px;
   color: var(--accent-green);
 }
+
+/* Black, lavender, and olive theme with consistently square corners. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+body,
+html,
+.lock-screen-container,
+.desktop-container,
+.desktop-wallpaper {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(198, 174, 255, 0.1), transparent 38%),
+    radial-gradient(ellipse at 84% 78%, rgba(164, 168, 90, 0.08), transparent 42%),
+    linear-gradient(135deg, #050505, #111014);
+}
+
+.wallpaper-mesh {
+  background-image:
+    linear-gradient(rgba(198, 174, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(164, 168, 90, 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.lock-card,
+.os-window,
+.organizer-drawer-card,
+.hint-modal-card,
+.dossier-detail-modal,
+.server-locked-card,
+.restore-form-box,
+.terminal-step-box,
+.dossier-card,
+.profile-section,
+.summary-box,
+.fw-panel,
+.hint-tier-box,
+.document-sheet,
+.key-observation-box,
+.topology-card,
+.token-reveal-card,
+.clock-calibration-card,
+.app-toast,
+.violation-card {
+  border: 1px solid rgba(198, 174, 255, 0.56);
+  background: linear-gradient(145deg, rgba(35, 33, 40, 0.98), rgba(13, 13, 14, 0.98));
+  box-shadow: 5px 5px 0 rgba(164, 168, 90, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.window-header,
+.terminal-header-bar,
+.editor-header,
+.console-header,
+.dossier-toolbar,
+.prop-sidebar-header,
+.org-header,
+.hint-modal-header,
+.modal-header {
+  background: linear-gradient(90deg, rgba(198, 174, 255, 0.13), rgba(164, 168, 90, 0.08)), #17161a;
+  border-color: rgba(198, 174, 255, 0.38);
+}
+
+.terminal-body,
+.console-body,
+.editor-workspace,
+.prop-display-stage,
+.window-body {
+  background: #09090a;
+}
+
+.desktop-taskbar {
+  background: #111014;
+  border-top: 1px solid rgba(198, 174, 255, 0.48);
+  box-shadow: 0 -4px 0 rgba(164, 168, 90, 0.12);
+}
+
+.desktop-sticky-note {
+  background: linear-gradient(145deg, #25252a, #111014);
+  border: 1px solid rgba(164, 168, 90, 0.65);
+  color: #f3f0e2;
+  box-shadow: 5px 5px 0 rgba(164, 168, 90, 0.18);
+}
+
+.desktop-photo-widget {
+  background: #19181c;
+  border: 1px solid rgba(198, 174, 255, 0.68);
+  box-shadow: 5px 5px 0 rgba(164, 168, 90, 0.18);
+}
+
+.photo-placeholder {
+  background: #111014;
+  color: #d7d2e0;
+}
+
+.photo-caption,
+.text-muted,
+.org-sub {
+  color: var(--text-muted);
+}
+
+.term-input,
+.term-cli-field,
+.net-search-box input,
+.dossier-search input,
+.cyber-input,
+.cyber-select,
+.cyber-textarea,
+.cal-input,
+.fw-input,
+.lock-input,
+#team-id-field,
+#gm-password-input {
+  border: 1px solid rgba(198, 174, 255, 0.48);
+  background: #080809;
+  color: #fff;
+  box-shadow: inset 2px 2px 0 rgba(198, 174, 255, 0.08);
+}
+
+.term-input:focus,
+.net-search-box input:focus,
+.dossier-search input:focus,
+.cyber-input:focus,
+.cyber-select:focus,
+.cyber-textarea:focus,
+.cal-input:focus,
+.fw-input:focus,
+.lock-input:focus,
+#team-id-field:focus,
+#gm-password-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 rgba(164, 168, 90, 0.35);
+}
+
+.term-btn,
+.term-btn-small,
+.lock-submit-btn,
+.lock-reset-btn,
+.restart-btn,
+.editor-btn,
+.patch-btn,
+.cam-btn,
+.ctrl-btn,
+.verify-matrix-btn,
+.view-dossier-btn,
+.cyber-submit-btn,
+.org-ctrl-btn,
+.stage-btn,
+.danger-reset-btn,
+.hint-unlock-btn,
+.fw-btn,
+.dos-tab,
+.prop-nav-item.active,
+.sdb-view-btn,
+.sdb-finalize-btn,
+#team-id-save-btn,
+.taskbar-btn,
+.taskbar-start-btn,
+.win-btn,
+.team-id-strip button {
+  border: 1px solid var(--accent);
+  background: #282332;
+  color: #fff;
+  box-shadow: 3px 3px 0 rgba(164, 168, 90, 0.42);
+}
+
+.term-btn:hover:not(:disabled),
+.term-btn-small:hover,
+.lock-submit-btn:hover,
+.lock-reset-btn:hover,
+.restart-btn:hover,
+.editor-btn:hover,
+.patch-btn:hover,
+.cam-btn:hover,
+.ctrl-btn:hover,
+.verify-matrix-btn:hover,
+.view-dossier-btn:hover,
+.cyber-submit-btn:hover,
+.org-ctrl-btn:hover,
+.stage-btn:hover,
+.danger-reset-btn:hover,
+.hint-unlock-btn:hover:not(:disabled),
+.fw-btn:hover:not(:disabled),
+.dos-tab:hover,
+.sdb-view-btn:hover,
+.sdb-finalize-btn:hover,
+#team-id-save-btn:hover,
+.taskbar-btn:hover,
+.taskbar-start-btn:hover,
+.win-btn:hover,
+.team-id-strip button:hover {
+  background: #403650;
+  border-color: #e3d8ff;
+  box-shadow: 4px 4px 0 rgba(164, 168, 90, 0.55);
+  color: #fff;
+}
+
+.org-badge,
+.puzzle-badge,
+.step-badge,
+.taskbar-stage-badge,
+.dos-tab.active,
+.modal-badge {
+  color: #f5f0ff;
+  background: #403650;
+  border: 1px solid var(--accent);
+  box-shadow: 2px 2px 0 rgba(164, 168, 90, 0.36);
+}
+
+.org-section h3,
+.hint-header-title,
+.toast-title,
+.term-tag,
+.file-name,
+.feed-name,
+.dos-role,
+.stage-tag,
+.sec-label {
+  color: var(--accent);
+  text-shadow: none;
+}
+
+.cyber-table th {
+  background: #272330;
+  color: #fff;
+}
+
+.cyber-table td,
+.cyber-table th {
+  border-color: rgba(198, 174, 255, 0.34);
+}
+
+.gm-status-badge.active,
+.gm-resume-team-btn {
+  background: #414329 !important;
+  border-color: var(--accent-green) !important;
+  color: #f3f2d8 !important;
+}
+
+.gm-status-badge.completed {
+  background: #282332;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.desktop-icon:hover,
+.dossier-card:hover,
+.server-file-item:hover,
+.prop-nav-item:hover,
+.bug-toggle-card:hover,
+.check-item:hover {
+  border-color: var(--accent);
+  box-shadow: 4px 4px 0 rgba(164, 168, 90, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: 3px 3px 0 rgba(164, 168, 90, 0.36);
+}

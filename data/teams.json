@@ -481,41 +481,16 @@
   },
   "TEAM01": {
     "teamId": "TEAM01",
-    "stage": 6,
-    "gameHalted": false,
-    "haltReason": null,
-    "haltTimestamp": null,
-    "startTime": 1794804901198,
-    "timerSeconds": 3091,
-    "finalizations": [
-      {
-        "id": "02",
-        "name": "Prof. Anand Rao",
-        "type": "MAIN",
-        "timestamp": "10:26:33 IST",
-        "slot": 1,
-        "isCorrect": true
-      },
-      {
-        "id": "05",
-        "name": "Divya Mehta",
-        "type": "MAIN",
-        "timestamp": "10:29:12 IST",
-        "slot": 2,
-        "isCorrect": true
-      },
-      {
-        "id": "08",
-        "name": "K. Verma",
-        "type": "MAIN",
-        "timestamp": "10:32:41 IST",
-        "slot": 3,
-        "isCorrect": true
-      }
-    ],
-    "finalMurderer": "K. Verma",
-    "finalReasoning": "1) hwdvsaj weoiuasj\n2) uewkhd weijdsk\n3) wieud ewkdj",
-    "finalSubmissionTimestamp": "10:33:08 IST",
+    "stage": 1,
+    "gameHalted": true,
+    "haltReason": "TAB / WINDOW SWITCH",
+    "haltTimestamp": "19:21:09 IST",
+    "startTime": 1794922542696,
+    "timerSeconds": 2674,
+    "finalizations": [],
+    "finalMurderer": null,
+    "finalReasoning": null,
+    "finalSubmissionTimestamp": null,
     "wipeStopped": true,
     "events": [
       {
@@ -667,19 +642,38 @@
         "meta": {
           "timestamp": "10:33:30 IST"
         }
+      },
+      {
+        "ts": 1794923469692,
+        "iso": "2026-11-17T13:51:09.692Z",
+        "clock": "19:21:09 IST",
+        "teamId": "TEAM01",
+        "type": "TAB_SWITCH_VIOLATION",
+        "message": "Team switched tabs or minimized the browser at 19:21:09 IST. Game halted pending GM review.",
+        "meta": {
+          "timestamp": "19:21:09 IST",
+          "reason": "TAB / WINDOW SWITCH",
+          "stage": "ACCESS (SUSPECTS_DB)",
+          "statusBefore": "ACTIVE",
+          "statusAfter": "GAME HALTED"
+        }
       }
     ],
     "lastEvent": {
-      "ts": 1794805410899,
-      "iso": "2026-11-16T05:03:30.899Z",
-      "clock": "10:33:30 IST",
+      "ts": 1794923469692,
+      "iso": "2026-11-17T13:51:09.692Z",
+      "clock": "19:21:09 IST",
       "teamId": "TEAM01",
-      "type": "WIPE_STOPPED",
-      "message": "Data wipe stopped at 10:33:30 IST. Recovery initiated.",
+      "type": "TAB_SWITCH_VIOLATION",
+      "message": "Team switched tabs or minimized the browser at 19:21:09 IST. Game halted pending GM review.",
       "meta": {
-        "timestamp": "10:33:30 IST"
+        "timestamp": "19:21:09 IST",
+        "reason": "TAB / WINDOW SWITCH",
+        "stage": "ACCESS (SUSPECTS_DB)",
+        "statusBefore": "ACTIVE",
+        "statusAfter": "GAME HALTED"
       }
     },
-    "lastUpdate": "10:33:30 IST"
+    "lastUpdate": "19:21:09 IST"
   }
 }

@@ -4,28 +4,28 @@
    ========================================================================== */
 
 :root {
-  --bg-start: #08051c;
-  --bg-end: #24105d;
-  --card-bg: rgba(42, 34, 112, 0.48);
-  --card-border: rgba(202, 211, 255, 0.52);
-  --accent: #65edff;
+  --bg-start: #050505;
+  --bg-end: #111014;
+  --card-bg: rgba(20, 19, 23, 0.96);
+  --card-border: rgba(198, 174, 255, 0.48);
+  --accent: #c6adff;
   --text: #ffffff;
 
   --bg-dark: var(--bg-start);
-  --bg-panel: rgba(21, 17, 58, 0.9);
-  --bg-panel-subtle: rgba(65, 50, 145, 0.48);
+  --bg-panel: #111014;
+  --bg-panel-subtle: rgba(50, 52, 28, 0.62);
   --border-color: var(--card-border);
-  --border-highlight: rgba(101, 237, 255, 0.65);
+  --border-highlight: rgba(198, 174, 255, 0.68);
   
   --text-primary: var(--text);
   --text-secondary: rgba(255, 255, 255, 0.85);
-  --text-muted: rgba(231, 224, 255, 0.72);
+  --text-muted: rgba(222, 219, 228, 0.7);
   
-  --accent-blue: #62aaff;
+  --accent-blue: #bda3ff;
   --accent-cyan: var(--accent);
-  --accent-green: #69ffd3;
-  --accent-amber: #ffe580;
-  --accent-red: #ff6ba8;
+  --accent-green: #a4a85a;
+  --accent-amber: #c3bb75;
+  --accent-red: #df778b;
 
   --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Fira Code', monospace;
@@ -45,8 +45,8 @@ body, html {
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 12% 10%, rgba(255, 91, 205, 0.22), transparent 34%),
-    radial-gradient(ellipse at 88% 78%, rgba(73, 220, 255, 0.2), transparent 40%),
+    radial-gradient(ellipse at 12% 10%, rgba(169, 145, 220, 0.12), transparent 34%),
+    radial-gradient(ellipse at 88% 78%, rgba(137, 145, 70, 0.1), transparent 40%),
     linear-gradient(135deg, var(--bg-start), var(--bg-end));
   font-family: var(--font-sans);
   color: var(--text-primary);
@@ -70,8 +70,8 @@ body, html {
   justify-content: center;
   align-items: center;
   background:
-    radial-gradient(ellipse at 24% 18%, rgba(255, 91, 205, 0.28), transparent 38%),
-    radial-gradient(ellipse at 80% 82%, rgba(101, 237, 255, 0.2), transparent 42%),
+    radial-gradient(ellipse at 24% 18%, rgba(169, 145, 220, 0.18), transparent 38%),
+    radial-gradient(ellipse at 80% 82%, rgba(137, 145, 70, 0.14), transparent 42%),
     linear-gradient(135deg, var(--bg-start), var(--bg-end));
   z-index: 1000;
 }
