@@ -2498,6 +2498,336 @@
 
 .fw-chiprow { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
 
+/* Glass-blue theme overrides for interactive panels and controls. */
+.terminal-window,
+.code-editor-layout,
+.net-layout,
+.dossier-layout,
+.prop-viewer-layout,
+.restore-console-layout,
+.fw-layout {
+  color: var(--text-primary);
+}
+
+.terminal-window,
+.terminal-body,
+.terminal-header-bar,
+.terminal-cmd-line,
+.code-editor-layout,
+.editor-header,
+.editor-workspace,
+.console-header,
+.console-body,
+.net-layout,
+.dossier-layout,
+.dossier-toolbar,
+.prop-viewer-layout,
+.prop-sidebar,
+.prop-sidebar-header,
+.prop-display-stage,
+.restore-console-layout,
+.restore-form-box,
+.hint-modal-card,
+.hint-modal-header,
+.hint-modal-body,
+.organizer-drawer-card,
+.org-header,
+.org-body-tabs,
+.server-locked-card,
+.app-toast,
+.fw-panel,
+.fw-topbar,
+.dossier-detail-modal,
+.modal-header,
+.profile-section,
+.summary-box,
+.document-sheet {
+  background-color: var(--bg-panel);
+}
+
+.terminal-step-box,
+.dossier-card,
+.profile-section,
+.restore-form-box,
+.summary-box,
+.fw-panel,
+.hint-tier-box,
+.document-sheet,
+.key-observation-box,
+.topology-card,
+.token-reveal-card,
+.clock-calibration-card,
+.restore-form-box,
+.organizer-drawer-card,
+.hint-modal-card,
+.dossier-detail-modal,
+.server-locked-card {
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 5, 24, 0.24), 0 0 18px rgba(30, 144, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.terminal-step-box,
+.dossier-card,
+.profile-section,
+.summary-box,
+.fw-panel,
+.hint-tier-box,
+.document-sheet,
+.key-observation-box,
+.topology-card,
+.token-reveal-card,
+.clock-calibration-card {
+  background-color: var(--card-bg);
+}
+
+.term-input,
+.term-cli-field,
+.net-search-box input,
+.dossier-search input,
+.cyber-input,
+.cyber-select,
+.cyber-textarea,
+.cal-input,
+.fw-input,
+.lock-input,
+#team-id-field,
+#gm-password-input {
+  background-color: rgba(0, 8, 20, 0.72);
+  border-color: var(--card-border);
+  color: var(--text-primary);
+  border-radius: 10px;
+}
+
+.term-input:focus,
+.net-search-box input:focus,
+.dossier-search input:focus,
+.cyber-input:focus,
+.cyber-select:focus,
+.cyber-textarea:focus,
+.cal-input:focus,
+.fw-input:focus,
+.lock-input:focus,
+#team-id-field:focus,
+#gm-password-input:focus {
+  outline: 2px solid rgba(76, 201, 240, 0.7);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(76, 201, 240, 0.18);
+}
+
+.term-btn,
+.term-btn-small,
+.lock-submit-btn,
+.lock-reset-btn,
+.restart-btn,
+.editor-btn,
+.patch-btn,
+.cam-btn,
+.ctrl-btn,
+.verify-matrix-btn,
+.view-dossier-btn,
+.cyber-submit-btn,
+.org-ctrl-btn,
+.stage-btn,
+.danger-reset-btn,
+.hint-unlock-btn,
+.fw-btn,
+.dos-tab,
+.prop-nav-item.active,
+.sdb-view-btn,
+.sdb-finalize-btn,
+#team-id-save-btn {
+  color: #fff;
+  border: 1px solid rgba(115, 190, 255, 0.68);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(30, 144, 255, 0.68), rgba(0, 65, 160, 0.64));
+  box-shadow: 0 4px 16px rgba(0, 20, 80, 0.2);
+}
+
+.term-btn:hover:not(:disabled),
+.term-btn-small:hover,
+.lock-submit-btn:hover,
+.lock-reset-btn:hover,
+.restart-btn:hover,
+.editor-btn:hover,
+.patch-btn:hover,
+.cam-btn:hover,
+.ctrl-btn:hover,
+.verify-matrix-btn:hover,
+.view-dossier-btn:hover,
+.cyber-submit-btn:hover,
+.org-ctrl-btn:hover,
+.stage-btn:hover,
+.danger-reset-btn:hover,
+.hint-unlock-btn:hover:not(:disabled),
+.fw-btn:hover:not(:disabled),
+.dos-tab:hover,
+.sdb-view-btn:hover,
+.sdb-finalize-btn:hover,
+#team-id-save-btn:hover {
+  background: linear-gradient(135deg, rgba(76, 201, 240, 0.88), rgba(30, 100, 220, 0.86));
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(76, 201, 240, 0.2);
+}
+
+.cyber-submit-btn,
+.hint-unlock-btn,
+.danger-reset-btn {
+  background: linear-gradient(135deg, rgba(30, 144, 255, 0.72), rgba(0, 65, 160, 0.72));
+  border-color: rgba(115, 190, 255, 0.7);
+}
+
+.os-window button:focus-visible,
+.modal-backdrop button:focus-visible,
+.os-window [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.terminal-header-bar,
+.editor-header,
+.dossier-toolbar,
+.prop-sidebar-header,
+.org-header,
+.hint-modal-header,
+.modal-header {
+  border-color: var(--card-border);
+}
+
+.dossier-card:hover,
+.server-file-item:hover,
+.prop-nav-item:hover,
+.bug-toggle-card:hover,
+.check-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 26px rgba(30, 144, 255, 0.13);
+}
+
+.cctv-gate-photo,
+.cctv-video-element,
+.cctv-monitor-screen,
+.cctv-canvas {
+  border-radius: 14px;
+}
+
+.org-badge {
+  background: rgba(30, 144, 255, 0.82);
+  border-radius: 999px;
+}
+
+.org-section h3,
+.hint-header-title {
+  color: var(--accent);
+}
+
+.org-tab-btn,
+.org-close-btn,
+.hint-close-btn,
+.modal-close-btn {
+  border-radius: 999px;
+  transition: color 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.org-tab-btn:focus-visible,
+.org-close-btn:focus-visible,
+.hint-close-btn:focus-visible,
+.modal-close-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.toast-container {
+  width: min(460px, calc(100vw - 32px));
+}
+
+.app-toast {
+  border-color: var(--card-border);
+  border-left: 4px solid var(--accent);
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+}
+
+.toast-title {
+  color: var(--accent);
+}
+
+.cyber-table th {
+  background: rgba(10, 40, 100, 0.5);
+  color: #d9f4ff;
+}
+
+.cyber-table td,
+.cyber-table th {
+  border-color: rgba(80, 140, 255, 0.24);
+}
+
+@media (max-width: 760px) {
+  .cctv-layout,
+  .net-main-split,
+  .sdb-layout,
+  .server-folder-layout,
+  .prop-viewer-layout,
+  .modal-content-grid,
+  .restore-header,
+  .fragment-assembly-bar,
+  .restored-status-action,
+  .timer-control-bar {
+    flex-wrap: wrap;
+  }
+
+  .organizer-drawer-card,
+  .hint-modal-card,
+  .dossier-detail-modal {
+    width: calc(100vw - 24px);
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+
+  .org-body-tabs,
+  .hint-modal-body,
+  .modal-content-grid {
+    padding: 14px;
+  }
+
+  .org-tab-row,
+  .dossier-filter-tabs {
+    flex-wrap: wrap;
+  }
+
+  .cyber-table {
+    min-width: 620px;
+  }
+
+  .solved-summary-grid,
+  .signatures-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prop-sidebar {
+    width: 100%;
+    max-height: 180px;
+  }
+
+  .prop-items-list {
+    max-height: 130px;
+  }
+
+  .prop-display-stage {
+    min-width: 0;
+    padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast {
+    animation: none;
+  }
+}
+
 .fw-queue { display: flex; gap: 6px; flex-wrap: wrap; font-size: 11px; margin-bottom: 4px; }
 .fw-q { border: 1px solid var(--border-color); padding: 1px 8px; border-radius: 3px; color: var(--text-muted); }
 .fw-q.done { border-color: var(--accent-green); color: var(--accent-green); }
@@ -2529,6 +2859,323 @@ table.fw-sum td { padding: 4px 6px; border-bottom: 1px solid var(--border-color)
 tr.fw-hit td { color: var(--accent-amber); }
 
 .fw-big { font-size: 26px; letter-spacing: 3px; color: var(--accent-amber); line-height: 1.3; }
+
+/* Y2K chrome, candy-neon accents, and glossy glass surfaces. */
+.terminal-window,
+.terminal-body,
+.terminal-header-bar,
+.terminal-cmd-line,
+.code-editor-layout,
+.editor-header,
+.editor-workspace,
+.console-header,
+.console-body,
+.net-layout,
+.dossier-layout,
+.dossier-toolbar,
+.prop-viewer-layout,
+.prop-sidebar,
+.prop-sidebar-header,
+.prop-display-stage,
+.restore-console-layout,
+.restore-form-box,
+.hint-modal-card,
+.hint-modal-header,
+.hint-modal-body,
+.organizer-drawer-card,
+.org-header,
+.org-body-tabs,
+.server-locked-card,
+.app-toast,
+.fw-panel,
+.fw-topbar,
+.dossier-detail-modal,
+.modal-header,
+.document-sheet {
+  background-color: var(--bg-panel);
+}
+
+.os-window,
+.lock-card,
+.organizer-drawer-card,
+.hint-modal-card,
+.dossier-detail-modal,
+.server-locked-card,
+.restore-form-box,
+.terminal-step-box,
+.dossier-card,
+.profile-section,
+.summary-box,
+.fw-panel,
+.hint-tier-box,
+.document-sheet,
+.key-observation-box,
+.topology-card,
+.token-reveal-card,
+.clock-calibration-card,
+.app-toast {
+  border: 1px solid rgba(218, 223, 255, 0.62);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 30%),
+    linear-gradient(135deg, rgba(74, 59, 145, 0.64), rgba(20, 15, 58, 0.92));
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(255, 91, 205, 0.1),
+    inset 0 1px rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.terminal-step-box,
+.dossier-card,
+.profile-section,
+.summary-box,
+.fw-panel,
+.hint-tier-box,
+.document-sheet,
+.key-observation-box,
+.topology-card,
+.token-reveal-card,
+.clock-calibration-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 42%),
+    rgba(43, 34, 111, 0.62);
+}
+
+.terminal-header-bar,
+.editor-header,
+.console-header,
+.dossier-toolbar,
+.prop-sidebar-header,
+.org-header,
+.hint-modal-header,
+.modal-header {
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, 0.16), transparent 48%),
+    linear-gradient(110deg, rgba(66, 49, 140, 0.88), rgba(20, 14, 58, 0.96));
+  border-color: rgba(209, 218, 255, 0.4);
+}
+
+.terminal-body,
+.console-body,
+.editor-workspace,
+.prop-display-stage {
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(80, 196, 255, 0.08), transparent 46%),
+    rgba(9, 7, 32, 0.88);
+}
+
+.term-input,
+.term-cli-field,
+.net-search-box input,
+.dossier-search input,
+.cyber-input,
+.cyber-select,
+.cyber-textarea,
+.cal-input,
+.fw-input,
+.lock-input,
+#team-id-field,
+#gm-password-input {
+  border: 1px solid rgba(209, 218, 255, 0.48);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 42%),
+    rgba(9, 7, 32, 0.86);
+  color: #fff;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.34);
+}
+
+.term-input:focus,
+.net-search-box input:focus,
+.dossier-search input:focus,
+.cyber-input:focus,
+.cyber-select:focus,
+.cyber-textarea:focus,
+.cal-input:focus,
+.fw-input:focus,
+.lock-input:focus,
+#team-id-field:focus,
+#gm-password-input:focus {
+  border-color: var(--accent);
+  outline: 2px solid rgba(101, 237, 255, 0.52);
+  outline-offset: 2px;
+  box-shadow: 0 0 18px rgba(101, 237, 255, 0.24), inset 0 2px 6px rgba(0, 0, 0, 0.34);
+}
+
+.term-btn,
+.term-btn-small,
+.lock-submit-btn,
+.lock-reset-btn,
+.restart-btn,
+.editor-btn,
+.patch-btn,
+.cam-btn,
+.ctrl-btn,
+.verify-matrix-btn,
+.view-dossier-btn,
+.cyber-submit-btn,
+.org-ctrl-btn,
+.stage-btn,
+.danger-reset-btn,
+.hint-unlock-btn,
+.fw-btn,
+.dos-tab,
+.prop-nav-item.active,
+.sdb-view-btn,
+.sdb-finalize-btn,
+#team-id-save-btn,
+.taskbar-btn,
+.taskbar-start-btn,
+.win-btn {
+  border: 1px solid rgba(244, 246, 255, 0.78);
+  border-radius: 999px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.08) 24%, transparent 48%),
+    linear-gradient(110deg, #6d63bb 0%, #bd59b9 48%, #329fca 100%);
+  box-shadow:
+    0 5px 16px rgba(9, 3, 37, 0.35),
+    inset 0 1px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -2px 4px rgba(11, 6, 51, 0.4);
+}
+
+.term-btn:hover:not(:disabled),
+.term-btn-small:hover,
+.lock-submit-btn:hover,
+.lock-reset-btn:hover,
+.restart-btn:hover,
+.editor-btn:hover,
+.patch-btn:hover,
+.cam-btn:hover,
+.ctrl-btn:hover,
+.verify-matrix-btn:hover,
+.view-dossier-btn:hover,
+.cyber-submit-btn:hover,
+.org-ctrl-btn:hover,
+.stage-btn:hover,
+.danger-reset-btn:hover,
+.hint-unlock-btn:hover:not(:disabled),
+.fw-btn:hover:not(:disabled),
+.dos-tab:hover,
+.sdb-view-btn:hover,
+.sdb-finalize-btn:hover,
+#team-id-save-btn:hover,
+.taskbar-btn:hover,
+.taskbar-start-btn:hover,
+.win-btn:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.12) 32%, transparent 56%),
+    linear-gradient(110deg, #9287e9 0%, #ef79d6 48%, #5cdcf1 100%);
+  border-color: #fff;
+  box-shadow: 0 0 22px rgba(101, 237, 255, 0.32), 0 0 24px rgba(255, 91, 205, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.78);
+}
+
+.org-badge,
+.puzzle-badge,
+.step-badge,
+.taskbar-stage-badge,
+.dos-tab.active,
+.modal-badge {
+  color: #fff;
+  border-color: rgba(244, 246, 255, 0.52);
+  background: linear-gradient(110deg, rgba(255, 91, 205, 0.88), rgba(89, 134, 245, 0.86), rgba(63, 209, 229, 0.86));
+  box-shadow: 0 0 14px rgba(255, 91, 205, 0.14);
+}
+
+.win-title,
+.org-title h2,
+.restore-header h2,
+.dos-name,
+.sdb-dossier-name,
+.case-solved-card h2 {
+  text-shadow: 0 0 14px rgba(101, 237, 255, 0.24), 0 0 18px rgba(255, 91, 205, 0.14);
+}
+
+.org-section h3,
+.hint-header-title,
+.toast-title,
+.term-tag,
+.file-name,
+.feed-name,
+.dos-role,
+.stage-tag,
+.sec-label {
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(101, 237, 255, 0.2);
+}
+
+.org-tab-btn,
+.org-close-btn,
+.hint-close-btn,
+.modal-close-btn {
+  border-color: rgba(209, 218, 255, 0.38);
+  color: #f7f4ff;
+}
+
+.dossier-card:hover,
+.server-file-item:hover,
+.prop-nav-item:hover,
+.bug-toggle-card:hover,
+.check-item:hover {
+  border-color: #ff91df;
+  box-shadow: 0 8px 26px rgba(255, 91, 205, 0.18), 0 0 18px rgba(101, 237, 255, 0.12);
+}
+
+.cctv-gate-photo,
+.cctv-video-element,
+.cctv-monitor-screen,
+.cctv-canvas {
+  border: 1px solid rgba(218, 223, 255, 0.56);
+  border-radius: 16px;
+  box-shadow: 0 0 18px rgba(101, 237, 255, 0.14);
+}
+
+.app-toast {
+  border-left: 4px solid #ff7cda;
+}
+
+.toast-title {
+  color: #ff9be4;
+}
+
+.cyber-table th {
+  background: linear-gradient(110deg, rgba(255, 91, 205, 0.28), rgba(101, 237, 255, 0.2));
+  color: #fff;
+}
+
+.cyber-table td,
+.cyber-table th {
+  border-color: rgba(209, 218, 255, 0.3);
+}
+
+.fw-cell,
+.fw-pkt,
+.fw-side .fw-box {
+  border-color: rgba(209, 218, 255, 0.4);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 42%),
+    rgba(17, 12, 49, 0.82);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lock-card,
+  .os-window {
+    animation: y2k-arrive 420ms ease-out both;
+  }
+}
+
+@keyframes y2k-arrive {
+  from {
+    opacity: 0.88;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .fw-blink { animation: fwblink 1.05s steps(1,end) infinite; }
 @keyframes fwblink { 50% { opacity: 0; } }
 

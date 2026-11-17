@@ -193,17 +193,17 @@
   "HELOO": {
     "teamId": "HELOO",
     "stage": 1,
-    "gameHalted": false,
-    "haltReason": null,
-    "haltTimestamp": null,
+    "gameHalted": true,
+    "haltReason": "TAB / WINDOW SWITCH",
+    "haltTimestamp": "10:24:03 IST",
     "startTime": 1794735391566,
-    "timerSeconds": 1154,
+    "timerSeconds": 0,
     "finalizations": [
       {
         "id": "02",
         "name": "Prof. Anand Rao",
         "type": "MAIN",
-        "timestamp": "15:06:32 IST",
+        "timestamp": "10:36:25 IST",
         "slot": 1,
         "isCorrect": true
       },
@@ -211,7 +211,7 @@
         "id": "05",
         "name": "Divya Mehta",
         "type": "MAIN",
-        "timestamp": "15:06:32 IST",
+        "timestamp": "10:36:25 IST",
         "slot": 2,
         "isCorrect": true
       },
@@ -219,7 +219,7 @@
         "id": "01",
         "name": "Ram Sharma",
         "type": "MAIN",
-        "timestamp": "15:06:32 IST",
+        "timestamp": "10:36:25 IST",
         "slot": 3,
         "isCorrect": true
       }
@@ -433,19 +433,253 @@
         "meta": {
           "organizerAction": "RESUME_GAME"
         }
+      },
+      {
+        "ts": 1794804828697,
+        "iso": "2026-11-16T04:53:48.698Z",
+        "clock": "10:23:48 IST",
+        "teamId": "HELOO",
+        "type": "TIMER_EXPIRED",
+        "message": "Remote wipe timer expired.",
+        "meta": {}
+      },
+      {
+        "ts": 1794804843258,
+        "iso": "2026-11-16T04:54:03.258Z",
+        "clock": "10:24:03 IST",
+        "teamId": "HELOO",
+        "type": "TAB_SWITCH_VIOLATION",
+        "message": "Team switched tabs or minimized the browser at 10:24:03 IST. Game halted pending GM review.",
+        "meta": {
+          "timestamp": "10:24:03 IST",
+          "reason": "TAB / WINDOW SWITCH",
+          "stage": "FINAL INVESTIGATION",
+          "statusBefore": "ACTIVE",
+          "statusAfter": "GAME HALTED"
+        }
+      },
+      {
+        "ts": 1794805585663,
+        "iso": "2026-11-16T05:06:25.663Z",
+        "clock": "10:36:25 IST",
+        "teamId": "HELOO",
+        "type": "GM_FORCE_STAGE",
+        "message": "GM force-unlocked through stage: FINAL",
+        "meta": {}
       }
     ],
     "lastEvent": {
-      "ts": 1794746170835,
-      "iso": "2026-11-15T12:36:10.835Z",
-      "clock": "18:06:10 IST",
+      "ts": 1794805585663,
+      "iso": "2026-11-16T05:06:25.663Z",
+      "clock": "10:36:25 IST",
       "teamId": "HELOO",
-      "type": "GM_RESUME",
-      "message": "GM cleared halt state for Team HELOO. Game resumed.",
+      "type": "GM_FORCE_STAGE",
+      "message": "GM force-unlocked through stage: FINAL",
+      "meta": {}
+    },
+    "lastUpdate": "10:36:25 IST"
+  },
+  "TEAM01": {
+    "teamId": "TEAM01",
+    "stage": 6,
+    "gameHalted": false,
+    "haltReason": null,
+    "haltTimestamp": null,
+    "startTime": 1794804901198,
+    "timerSeconds": 3091,
+    "finalizations": [
+      {
+        "id": "02",
+        "name": "Prof. Anand Rao",
+        "type": "MAIN",
+        "timestamp": "10:26:33 IST",
+        "slot": 1,
+        "isCorrect": true
+      },
+      {
+        "id": "05",
+        "name": "Divya Mehta",
+        "type": "MAIN",
+        "timestamp": "10:29:12 IST",
+        "slot": 2,
+        "isCorrect": true
+      },
+      {
+        "id": "08",
+        "name": "K. Verma",
+        "type": "MAIN",
+        "timestamp": "10:32:41 IST",
+        "slot": 3,
+        "isCorrect": true
+      }
+    ],
+    "finalMurderer": "K. Verma",
+    "finalReasoning": "1) hwdvsaj weoiuasj\n2) uewkhd weijdsk\n3) wieud ewkdj",
+    "finalSubmissionTimestamp": "10:33:08 IST",
+    "wipeStopped": true,
+    "events": [
+      {
+        "ts": 1794804901211,
+        "iso": "2026-11-16T04:55:01.211Z",
+        "clock": "10:25:01 IST",
+        "teamId": "TEAM01",
+        "type": "LOGIN_SUCCESS",
+        "message": "Team authenticated into the laptop.",
+        "meta": {
+          "startTime": 1794804901198
+        }
+      },
+      {
+        "ts": 1794804993117,
+        "iso": "2026-11-16T04:56:33.117Z",
+        "clock": "10:26:33 IST",
+        "teamId": "TEAM01",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 1 finalized: Prof. Anand Rao (MAIN)",
+        "meta": {
+          "id": "02",
+          "name": "Prof. Anand Rao",
+          "type": "MAIN",
+          "slot": 1,
+          "timestamp": "10:26:33 IST",
+          "isCorrect": true,
+          "stage": "DEBUG (RECOVERY_CODE)"
+        }
+      },
+      {
+        "ts": 1794805100531,
+        "iso": "2026-11-16T04:58:20.531Z",
+        "clock": "10:28:20 IST",
+        "teamId": "TEAM01",
+        "type": "RECOVERY_CODE_SOLVED",
+        "message": "recovery_code debugging puzzle solved — replay archive reconstructed.",
+        "meta": {}
+      },
+      {
+        "ts": 1794805145393,
+        "iso": "2026-11-16T04:59:05.393Z",
+        "clock": "10:29:05 IST",
+        "teamId": "TEAM01",
+        "type": "SUSPECT_FINALIZE_BLOCKED",
+        "message": "Attempted to finalize Ram Sharma before nettrace + both CCTV cameras were complete.",
+        "meta": {
+          "id": "01",
+          "timestamp": "10:29:05 IST"
+        }
+      },
+      {
+        "ts": 1794805152257,
+        "iso": "2026-11-16T04:59:12.257Z",
+        "clock": "10:29:12 IST",
+        "teamId": "TEAM01",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 2 finalized: Divya Mehta (MAIN)",
+        "meta": {
+          "id": "05",
+          "name": "Divya Mehta",
+          "type": "MAIN",
+          "slot": 2,
+          "timestamp": "10:29:12 IST",
+          "isCorrect": true,
+          "stage": "TRACE (NETTRACE)"
+        }
+      },
+      {
+        "ts": 1794805255586,
+        "iso": "2026-11-16T05:00:55.586Z",
+        "clock": "10:30:55 IST",
+        "teamId": "TEAM01",
+        "type": "NETTRACE_SOLVED",
+        "message": "nettrace / IP game solved — origin WS-14 identified. CCTV unlocked.",
+        "meta": {}
+      },
+      {
+        "ts": 1794805286862,
+        "iso": "2026-11-16T05:01:26.862Z",
+        "clock": "10:31:26 IST",
+        "teamId": "TEAM01",
+        "type": "CCTV_CAM_VIEWED",
+        "message": "CAM01 viewed at least once.",
+        "meta": {
+          "camId": "CAM01"
+        }
+      },
+      {
+        "ts": 1794805346128,
+        "iso": "2026-11-16T05:02:26.128Z",
+        "clock": "10:32:26 IST",
+        "teamId": "TEAM01",
+        "type": "CCTV_CAM_VIEWED",
+        "message": "CAM02 viewed at least once.",
+        "meta": {
+          "camId": "CAM02"
+        }
+      },
+      {
+        "ts": 1794805361735,
+        "iso": "2026-11-16T05:02:41.735Z",
+        "clock": "10:32:41 IST",
+        "teamId": "TEAM01",
+        "type": "SUSPECT_FINALIZED",
+        "message": "Slot 3 finalized: K. Verma (MAIN)",
+        "meta": {
+          "id": "08",
+          "name": "K. Verma",
+          "type": "MAIN",
+          "slot": 3,
+          "timestamp": "10:32:41 IST",
+          "isCorrect": true,
+          "stage": "FINAL INVESTIGATION"
+        }
+      },
+      {
+        "ts": 1794805388715,
+        "iso": "2026-11-16T05:03:08.715Z",
+        "clock": "10:33:08 IST",
+        "teamId": "TEAM01",
+        "type": "FINAL_ACCUSATION_SUBMITTED",
+        "message": "Final suspect submitted: K. Verma",
+        "meta": {
+          "murderer": "K. Verma",
+          "reasoning": "1) hwdvsaj weoiuasj\n2) uewkhd weijdsk\n3) wieud ewkdj",
+          "timestamp": "10:33:08 IST",
+          "submissionStatus": "SUBMITTED"
+        }
+      },
+      {
+        "ts": 1794805408617,
+        "iso": "2026-11-16T05:03:28.617Z",
+        "clock": "10:33:28 IST",
+        "teamId": "TEAM01",
+        "type": "RAM_PC_LOGIN_SUCCESS",
+        "message": "WS-14 (Ram Sharma) login successful at 10:33:28 IST.",
+        "meta": {
+          "timestamp": "10:33:28 IST"
+        }
+      },
+      {
+        "ts": 1794805410899,
+        "iso": "2026-11-16T05:03:30.899Z",
+        "clock": "10:33:30 IST",
+        "teamId": "TEAM01",
+        "type": "WIPE_STOPPED",
+        "message": "Data wipe stopped at 10:33:30 IST. Recovery initiated.",
+        "meta": {
+          "timestamp": "10:33:30 IST"
+        }
+      }
+    ],
+    "lastEvent": {
+      "ts": 1794805410899,
+      "iso": "2026-11-16T05:03:30.899Z",
+      "clock": "10:33:30 IST",
+      "teamId": "TEAM01",
+      "type": "WIPE_STOPPED",
+      "message": "Data wipe stopped at 10:33:30 IST. Recovery initiated.",
       "meta": {
-        "organizerAction": "RESUME_GAME"
+        "timestamp": "10:33:30 IST"
       }
     },
-    "lastUpdate": "18:06:10 IST"
+    "lastUpdate": "10:33:30 IST"
   }
 }
