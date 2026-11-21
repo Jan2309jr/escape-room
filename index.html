@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escape The Server - ANVIKSHA</title>
+  <title>Escape The Server - SWExPRESIDENCY UNIVERSITY</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,6 +47,8 @@
       </div>
 
       <div id="lock-error-msg" class="lock-error hidden"></div>
+
+      <button id="lock-gm-btn" class="taskbar-btn org-btn-badge" style="display: flex; margin: 14px auto 0;">⚙ GAME MASTER CONTROL</button>
 
       <div class="lock-system-tag">
         STATION ID: MEERA-LAPTOP-WS08 // HOST: EPOCHCORP-INTRANET-SECURE // PROTOCOL: RECOVERY-01
@@ -283,7 +285,7 @@
     <div class="violation-card">
       <div class="violation-icon">🚫</div>
       <h1>GAME HALTED</h1>
-      <p>A tab switch or window/app switch was detected at <strong id="violation-timestamp"></strong>.</p>
+      <p><strong id="violation-reason">TAB / WINDOW SWITCH</strong> detected at <strong id="violation-timestamp"></strong>.</p>
       <p class="violation-sub">Please call your Game Master to review and resume your session.</p>
       <div style="margin-top: 22px;">
         <button id="violation-gm-btn" class="taskbar-btn org-btn-badge" style="padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">⚙ GM Control (Organizer Login)</button>

@@ -15,6 +15,7 @@ import { SuspectsDbViewerComponent } from './components/suspectsDbViewer.js';
 import { RestoreViewerComponent } from './components/restoreViewer.js';
 import { OrganizerModalComponent } from './components/organizerModal.js';
 import { ServerFolderViewerComponent } from './components/serverFolderViewer.js';
+import { FullscreenController } from './fullscreen-controller.mjs';
 
 class DesktopApp {
   constructor() {
@@ -22,6 +23,11 @@ class DesktopApp {
     this.highestZ = 100;
     this.components = {};
     this.orgModal = null;
+    this.fullscreenController = new FullscreenController(
+      document,
+      document.documentElement,
+      (error) => this.showToast('FULLSCREEN NOT STARTED', error.message || 'The browser blocked fullscreen.')
+    );
 
     this.init();
   }
@@ -53,7 +59,7 @@ class DesktopApp {
         this.showToast('⚠ 92% DATA WIPED OUT ALREADY', "LOGIN FROM HOST'S ACCOUNT TO STOP THE WIPE", () => this.openWindow('restore'));
       }
       if (event === 'TAB_SWITCH_VIOLATION') {
-        this.showViolationOverlay(payload.timestamp);
+        this.showViolationOverlay(payload.timestamp, payload.reason);
       }
       if (event === 'VIOLATION_CLEARED') {
         this.hideViolationOverlay();
@@ -78,15 +84,17 @@ class DesktopApp {
 
     // If a violation is already active on load/refresh, show the overlay.
     if (gameState.data.disqualified) {
-      this.showViolationOverlay(gameState.data.disqualifiedTimestamp);
+      this.showViolationOverlay(gameState.data.disqualifiedTimestamp, gameState.data.disqualifiedReason);
     }
   }
 
-  showViolationOverlay(timestamp) {
+  showViolationOverlay(timestamp, reason) {
     const overlay = document.getElementById('violation-screen');
     if (!overlay) return;
     const ts = overlay.querySelector('#violation-timestamp');
     if (ts) ts.textContent = timestamp || '';
+    const reasonElement = overlay.querySelector('#violation-reason');
+    if (reasonElement) reasonElement.textContent = reason || 'TAB / WINDOW SWITCH';
 
     const gmBtn = overlay.querySelector('#violation-gm-btn');
     if (gmBtn && !gmBtn._bound) {
@@ -150,6 +158,7 @@ class DesktopApp {
     const teamIdField = document.getElementById('team-id-field');
     const teamIdSaveBtn = document.getElementById('team-id-save-btn');
     const teamIdStrip = document.getElementById('team-id-strip');
+    const gmControlBtn = document.getElementById('lock-gm-btn');
 
     if (teamIdField) {
       teamIdField.value = gameState.teamId || '';
@@ -160,6 +169,12 @@ class DesktopApp {
         gameState.setTeamId(teamIdField.value);
         if (teamIdStrip) teamIdStrip.classList.add('saved');
         sound.playSuccess();
+      };
+    }
+    if (gmControlBtn) {
+      gmControlBtn.onclick = () => {
+        sound.playKeyClick();
+        if (this.orgModal) this.orgModal.show();
       };
     }
 
@@ -173,6 +188,7 @@ class DesktopApp {
           }
         } else {
           if (errorMsg) errorMsg.classList.add('hidden');
+          this.requestGameFullscreen();
           this.renderScreen();
         }
       };
@@ -224,11 +240,11 @@ class DesktopApp {
     if (fullscreenBtn) {
       fullscreenBtn.onclick = () => {
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
-          fullscreenBtn.textContent = '⛶ Exit Full';
+          this.requestGameFullscreen();
         } else {
-          document.exitFullscreen().catch(() => {});
-          fullscreenBtn.textContent = '⛶ Fullscreen';
+          document.exitFullscreen().catch((error) => {
+            this.showToast('FULLSCREEN UNAVAILABLE', error.message || 'The browser could not exit fullscreen.');
+          });
         }
       };
     }
@@ -394,6 +410,16 @@ class DesktopApp {
   }
 
   bindGlobalEvents() {
+    this.fullscreenController.bindUserGestures();
+    this.fullscreenController.bindExitDetection(() => gameState.triggerFullscreenExitViolation());
+
+    document.addEventListener('fullscreenchange', () => {
+      const fullscreenBtn = document.getElementById('taskbar-fs-btn');
+      if (fullscreenBtn) {
+        fullscreenBtn.textContent = document.fullscreenElement ? '⛶ Exit Full' : '⛶ Fullscreen';
+      }
+    });
+
     // Keyboard shortcut: Ctrl + Shift + O = Open Organizer Menu
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && (e.key === 'O' || e.key === 'o')) {
@@ -401,6 +427,10 @@ class DesktopApp {
         if (this.orgModal) this.orgModal.show();
       }
     });
+  }
+
+  requestGameFullscreen() {
+    this.fullscreenController.request();
   }
 }
 

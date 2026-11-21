@@ -8,6 +8,7 @@
 
 import { gameState, getISTTimestamp } from '../state.js';
 import { sound } from '../audio.js';
+import { renderTeamRows } from '../gm-dashboard.mjs';
 
 function escapeHtml(value) {
   return String(value || '')
@@ -22,6 +23,13 @@ export class OrganizerModalComponent {
     this.pwError = '';
     this.activeTab = 'allteams'; // default to multi-team dashboard for GMs
     this.allTeamsData = null;
+    this.serverEvents = null;
+    this.solutionKey = null;
+    this.solutionKeyLoading = false;
+    this.solutionKeyError = '';
+    this.eventLogError = '';
+    this.eventLogTeamFilter = 'ALL';
+    this.eventLogTypeFilter = 'ALL';
     this.teamActionError = '';
     this.refreshInterval = null;
     this.init();
@@ -51,9 +59,19 @@ export class OrganizerModalComponent {
   hide() {
     this.modal.classList.add('hidden');
     this.stopAutoRefresh();
-    // AUTO-LOCK: require the GM password again next time this panel opens.
+    if (this.unlocked) {
+      fetch('/api/gm/logout', { method: 'POST' }).catch((error) => {
+        console.error('Could not end the GM session.', error);
+      });
+    }
     this.unlocked = false;
     this.pwError = '';
+    this.allTeamsData = null;
+    this.serverEvents = null;
+    this.solutionKey = null;
+    this.solutionKeyLoading = false;
+    this.solutionKeyError = '';
+    this.eventLogError = '';
   }
 
   startAutoRefresh() {
@@ -61,6 +79,7 @@ export class OrganizerModalComponent {
     this.refreshInterval = setInterval(() => {
       if (this.unlocked && !this.modal.classList.contains('hidden')) {
         this.fetchAllTeams(true);
+        if (this.activeTab === 'log') this.fetchTeamEvents(true);
       }
     }, 3000);
   }
@@ -124,8 +143,14 @@ export class OrganizerModalComponent {
       </div>
     `;
 
-    if (this.activeTab === 'allteams' && this.allTeamsData === null) {
+    if (['allteams', 'submissions', 'log'].includes(this.activeTab) && this.allTeamsData === null) {
       this.fetchAllTeams();
+    }
+    if (this.activeTab === 'log' && this.serverEvents === null) {
+      this.fetchTeamEvents();
+    }
+    if (this.activeTab === 'stage' && !this.solutionKey && !this.solutionKeyLoading) {
+      this.fetchSolutionKey();
     }
   }
 
@@ -164,40 +189,7 @@ export class OrganizerModalComponent {
             <tbody>
               ${teamEntries.length === 0 ? `
                 <tr><td colspan="7" style="text-align: center; padding: 20px;">No team sessions recorded yet. Launch participant browsers with <code>?team=TEAM01</code>.</td></tr>
-              ` : teamEntries.map(([id, t]) => {
-                const isHalted = t.gameHalted || (t.lastEvent && t.lastEvent.type === 'TAB_SWITCH_VIOLATION');
-                const statusBadge = isHalted
-                  ? `<span class="gm-status-badge halted">🚨 GAME HALTED</span>`
-                  : (t.stage === 6 || t.wipeStopped ? `<span class="gm-status-badge completed">✔ COMPLETED</span>` : `<span class="gm-status-badge active">🟢 ACTIVE</span>`);
-                
-                const stageName = this.formatStageName(t.stage);
-                const haltInfo = isHalted
-                  ? `<div class="halt-reason-text"><strong>${t.haltReason || 'TAB / WINDOW SWITCH'}</strong><br><small>Halted at: ${t.haltTimestamp || (t.lastEvent ? t.lastEvent.clock : '—')}</small></div>`
-                  : `<span style="color:var(--text-muted);">None</span>`;
-
-                const suspectInfo = t.finalMurderer
-                  ? `<strong style="color:var(--accent-amber);">${escapeHtml(t.finalMurderer)}</strong><br><small style="color:var(--text-muted);">${t.finalSubmissionTimestamp || 'Submitted'}</small>`
-                  : `<span style="color:var(--text-muted);">NOT SUBMITTED</span>`;
-
-                return `
-                  <tr class="${isHalted ? 'row-halted' : ''}">
-                    <td><strong style="font-size: 14px; color: #fff;">${escapeHtml(id)}</strong></td>
-                    <td>${statusBadge}</td>
-                    <td><code>${stageName}</code></td>
-                    <td>${haltInfo}</td>
-                    <td>${suspectInfo}</td>
-                    <td><code>${t.lastUpdate || (t.lastEvent ? t.lastEvent.clock : '—')}</code></td>
-                    <td>
-                      ${isHalted ? `
-                        <button class="org-ctrl-btn gm-resume-team-btn" data-teamid="${escapeHtml(id)}">▶ RESUME GAME</button>
-                      ` : `
-                        <span style="color: var(--accent-green); font-size: 11px;">Running normally</span>
-                      `}
-                      <button class="org-ctrl-btn gm-delete-team-btn" data-teamid="${escapeHtml(id)}">🗑 DELETE TEAM</button>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
+              ` : renderTeamRows(teams)}
             </tbody>
           </table>
         </div>
@@ -263,7 +255,7 @@ export class OrganizerModalComponent {
       ${s.disqualified ? `
       <div class="org-section violation-section" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); padding: 16px; border-radius: 8px;">
         <h3 style="color: #fca5a5;">🚨 TAB-SWITCH VIOLATION ACTIVE FOR THIS STATION</h3>
-        <p class="org-sub">This team's game was halted at <strong>${s.disqualifiedTimestamp || 'recently'}</strong> for: <strong>${s.disqualifiedReason || 'TAB / WINDOW SWITCH'}</strong>.</p>
+        <p class="org-sub">This team's game was halted at <strong>${escapeHtml(s.disqualifiedTimestamp || 'recently')}</strong> for: <strong>${escapeHtml(s.disqualifiedReason || 'TAB / WINDOW SWITCH')}</strong>.</p>
         <button id="clear-violation-btn" class="danger-reset-btn" style="margin-top: 10px;">✅ CLEAR VIOLATION & RESUME GAME</button>
       </div>
       ` : ''}
@@ -301,32 +293,52 @@ export class OrganizerModalComponent {
 
       <div class="org-section">
         <h3>📑 SOLUTION KEY (ORGANIZER CONFIDENTIAL)</h3>
-        <table class="cyber-table small-table">
-          <thead><tr><th>Person</th><th>Verdict</th><th>Key Evidence</th></tr></thead>
-          <tbody>
-            <tr><td><strong>Ram Sharma</strong></td><td>Not culprit</td><td>WS-14 authenticated; CCTV shows operator struggling with machine they don't own.</td></tr>
-            <tr><td><strong>Prof. Anand Rao</strong></td><td>Not culprit</td><td>Left lunch at 5:40 PM; no re-entry recorded that night.</td></tr>
-            <tr><td><strong>Divya Mehta</strong></td><td>Not culprit</td><td>Exposed permissions earlier; wipe session traces to WS-14, not her login.</td></tr>
-            <tr style="background: rgba(239,68,68,0.15);"><td><strong style="color:#ef4444;">K. Verma</strong></td><td><strong>CULPRIT</strong></td><td>Grant ledger funds routed to NULLDEPT; car parked in Slot B-14 during wipe window.</td></tr>
-          </tbody>
-        </table>
+        <div id="gm-solution-key-content">${this.renderSolutionKey()}</div>
       </div>
     `;
   }
 
   renderLogTab() {
-    const events = [...gameState.data.eventLog].reverse();
+    const events = this.serverEvents
+      ? [...this.serverEvents].sort((left, right) => (Number(right.ts) || 0) - (Number(left.ts) || 0))
+      : [];
+    const eventTypes = [...new Set(events.map((event) => event.type).filter(Boolean))].sort();
+    const visibleEvents = events.filter((event) => this.eventLogTypeFilter === 'ALL' || event.type === this.eventLogTypeFilter);
+    const teams = this.allTeamsData && this.allTeamsData !== false ? Object.keys(this.allTeamsData).sort() : [];
+    const scope = this.eventLogTeamFilter === 'ALL' ? 'all teams (latest 500)' : `Team ${this.eventLogTeamFilter}`;
+    const summary = this.eventLogError || (this.serverEvents
+      ? `Showing ${visibleEvents.length} of ${events.length} recent event(s) for ${scope}.`
+      : `Loading events for ${scope}…`);
     return `
       <div class="org-section">
-        <h3>🧾 COMPLETE AUDIT LOG — STATION & GM ACTIONS</h3>
-        <p class="org-sub">${events.length} event(s) recorded for Team ${escapeHtml(gameState.teamId || 'UNASSIGNED')}.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <h3>🧾 EVENT LOG — ALL TEAMS</h3>
+          <button class="org-ctrl-btn" id="refresh-log-btn">🔄 Refresh Log</button>
+        </div>
+        <div class="timer-control-bar">
+          <label for="gm-log-team-filter">Team</label>
+          <select id="gm-log-team-filter" class="cyber-input">
+            <option value="ALL" ${this.eventLogTeamFilter === 'ALL' ? 'selected' : ''}>All teams (latest 500)</option>
+            ${teams.map((id) => `<option value="${escapeHtml(id)}" ${id === this.eventLogTeamFilter ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}
+          </select>
+          <label for="gm-log-type-filter">Event type</label>
+          <select id="gm-log-type-filter" class="cyber-input">
+            <option value="ALL">All event types</option>
+            ${eventTypes.map((type) => `<option value="${escapeHtml(type)}" ${type === this.eventLogTypeFilter ? 'selected' : ''}>${escapeHtml(type)}</option>`).join('')}
+          </select>
+        </div>
+        <p class="org-sub">${escapeHtml(summary)}</p>
         <div class="gm-event-log-scroll" style="max-height: 500px;">
           <table class="cyber-table small-table">
             <thead><tr><th>Time</th><th>Team ID</th><th>Type</th><th>Details</th></tr></thead>
             <tbody>
-              ${events.length === 0 ? `<tr><td colspan="4">No events recorded yet.</td></tr>` : events.map(ev => `
+              ${!this.serverEvents
+                ? '<tr><td colspan="4">Loading events…</td></tr>'
+                : visibleEvents.length === 0
+                  ? '<tr><td colspan="4">No matching events.</td></tr>'
+                  : visibleEvents.map(ev => `
                 <tr>
-                  <td><code>${ev.clock || getISTTimestamp(new Date(ev.ts))}</code></td>
+                  <td><code>${escapeHtml(ev.clock || getISTTimestamp(new Date(ev.ts)))}</code></td>
                   <td><strong>${escapeHtml(ev.teamId || gameState.teamId)}</strong></td>
                   <td><code>${escapeHtml(ev.type)}</code></td>
                   <td>
@@ -342,22 +354,38 @@ export class OrganizerModalComponent {
     `;
   }
 
-  formatStageName(stage) {
-    if (stage === 0 || stage === null) return 'LOCK SCREEN';
-    if (stage === 6) return 'CASE CLOSED';
-    if (typeof stage === 'string') return stage;
-    return `STAGE ${stage}`;
+  renderSolutionKey() {
+    if (this.solutionKeyError) return `<p class="org-sub">${escapeHtml(this.solutionKeyError)}</p>`;
+    if (!this.solutionKey) return '<p class="org-sub">Loading solution key…</p>';
+    return `
+      <table class="cyber-table small-table">
+        <thead><tr><th>Person</th><th>Verdict</th><th>Key Evidence</th></tr></thead>
+        <tbody>${this.solutionKey.map((item) => `
+          <tr>
+            <td><strong>${escapeHtml(item.person)}</strong></td>
+            <td>${escapeHtml(item.verdict)}</td>
+            <td>${escapeHtml(item.evidence)}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+    `;
   }
 
   async fetchAllTeams(silent = false) {
     try {
-      const res = await fetch('/api/teams');
-      if (!res.ok) throw new Error('bad response');
+      const view = this.activeTab === 'submissions' ? '?view=submissions' : '';
+      const res = await fetch(`/api/teams${view}`);
+      if (res.status === 401) {
+        this.lockExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
       const data = await res.json();
       this.allTeamsData = data;
     } catch (e) {
       this.allTeamsData = false;
     }
+    if (!this.unlocked) return;
     if (!silent) {
       this.render();
       this.bindEvents();
@@ -370,8 +398,71 @@ export class OrganizerModalComponent {
       } else if (activeTabContent && this.activeTab === 'submissions') {
         activeTabContent.innerHTML = this.renderSubmissionsTab();
         this.bindEvents();
+      } else if (activeTabContent && this.activeTab === 'log') {
+        activeTabContent.innerHTML = this.renderLogTab();
+        this.bindEvents();
       }
     }
+  }
+
+  async fetchTeamEvents(silent = false) {
+    try {
+      const endpoint = this.eventLogTeamFilter === 'ALL'
+        ? '/api/events'
+        : `/api/teams/${encodeURIComponent(this.eventLogTeamFilter)}/events`;
+      const res = await fetch(endpoint);
+      if (res.status === 401) {
+        this.lockExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
+      this.serverEvents = await res.json();
+      this.eventLogError = '';
+    } catch (error) {
+      this.serverEvents = [];
+      this.eventLogError = `Could not load the event log: ${error.message}`;
+    }
+    if (this.unlocked && this.activeTab === 'log') {
+      if (silent) {
+        const activeTabContent = this.modal.querySelector('.org-body-tabs');
+        if (activeTabContent) activeTabContent.innerHTML = this.renderLogTab();
+      } else {
+        this.render();
+      }
+      this.bindEvents();
+    }
+  }
+
+  async fetchSolutionKey() {
+    this.solutionKeyLoading = true;
+    try {
+      const res = await fetch('/api/gm/solution');
+      if (res.status === 401) {
+        this.lockExpiredSession();
+        return;
+      }
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
+      this.solutionKey = await res.json();
+    } catch (error) {
+      this.solutionKeyError = `Could not load the solution key: ${error.message}`;
+    } finally {
+      this.solutionKeyLoading = false;
+      if (this.unlocked && this.activeTab === 'stage') {
+        this.render();
+        this.bindEvents();
+      }
+    }
+  }
+
+  lockExpiredSession() {
+    this.unlocked = false;
+    this.pwError = 'GM session expired. Sign in again.';
+    this.allTeamsData = null;
+    this.serverEvents = null;
+    this.solutionKey = null;
+    this.eventLogError = '';
+    this.render();
+    this.bindEvents();
   }
 
   async resumeTeamOnServer(teamId) {
@@ -416,17 +507,32 @@ export class OrganizerModalComponent {
     const pwSubmit = this.modal.querySelector('#gm-password-submit');
     const pwInput = this.modal.querySelector('#gm-password-input');
     if (pwSubmit && pwInput) {
-      const doUnlock = () => {
-        if (gameState.verifyGmPassword(pwInput.value)) {
+      const doUnlock = async () => {
+        pwSubmit.disabled = true;
+        try {
+          const res = await fetch('/api/gm/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwInput.value })
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || `Server returned HTTP ${res.status}.`);
           this.unlocked = true;
           this.pwError = '';
+          this.allTeamsData = null;
+          this.serverEvents = null;
+          this.solutionKey = null;
+          this.solutionKeyError = '';
+          this.eventLogTeamFilter = 'ALL';
+          this.eventLogTypeFilter = 'ALL';
           sound.playSuccess();
-        } else {
-          this.pwError = 'Incorrect GM password.';
+        } catch (error) {
+          this.pwError = escapeHtml(error.message || 'Could not reach the game server.');
           sound.playError();
+        } finally {
+          this.render();
+          this.bindEvents();
         }
-        this.render();
-        this.bindEvents();
       };
       pwSubmit.onclick = doUnlock;
       pwInput.onkeydown = (e) => { if (e.key === 'Enter') doUnlock(); };
@@ -436,6 +542,7 @@ export class OrganizerModalComponent {
       btn.onclick = () => {
         this.activeTab = btn.getAttribute('data-tab');
         if (this.activeTab === 'allteams' || this.activeTab === 'submissions') this.allTeamsData = null;
+        if (this.activeTab === 'log') this.serverEvents = null;
         sound.playKeyClick();
         this.render();
         this.bindEvents();
@@ -444,6 +551,30 @@ export class OrganizerModalComponent {
 
     const refreshTeamsBtn = this.modal.querySelector('#refresh-teams-btn');
     if (refreshTeamsBtn) refreshTeamsBtn.onclick = () => { this.allTeamsData = null; this.fetchAllTeams(); };
+
+    const refreshLogBtn = this.modal.querySelector('#refresh-log-btn');
+    if (refreshLogBtn) refreshLogBtn.onclick = () => {
+      this.serverEvents = null;
+      this.render();
+      this.bindEvents();
+    };
+
+    const logTeamFilter = this.modal.querySelector('#gm-log-team-filter');
+    if (logTeamFilter) logTeamFilter.onchange = () => {
+      this.eventLogTeamFilter = logTeamFilter.value;
+      this.eventLogTypeFilter = 'ALL';
+      this.serverEvents = null;
+      this.render();
+      this.bindEvents();
+    };
+
+    const logTypeFilter = this.modal.querySelector('#gm-log-type-filter');
+    if (logTypeFilter) logTypeFilter.onchange = () => {
+      this.eventLogTypeFilter = logTypeFilter.value;
+      const activeTabContent = this.modal.querySelector('.org-body-tabs');
+      if (activeTabContent) activeTabContent.innerHTML = this.renderLogTab();
+      this.bindEvents();
+    };
 
     // Multi-team GM Resume handler
     this.modal.querySelectorAll('.gm-resume-team-btn').forEach(btn => {

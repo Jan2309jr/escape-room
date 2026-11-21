@@ -314,36 +314,45 @@ Organizer controls also support:
 
 This was particularly important for the live event because multiple teams were playing simultaneously.
 
+Open **GAME MASTER CONTROL** on the lock screen from the host laptop to monitor teams without starting a player session. All player devices must connect to that same server (for example, `http://<host-lan-ip>:3000/?team=TEAM01`) and use a unique team ID.
+
+### Concurrent Teams & Event Logs
+
+The server was load-tested with 50 simultaneous team event submissions and, separately, 50 concurrent status polls. Use a unique team ID for each team; game progress is stored in each team's browser, so teams sharing one ID across multiple devices do not share full puzzle progress. This is a single Node.js server with JSON-file persistence, not a horizontally scaled or database-backed deployment.
+
+The GM event log can show the latest 500 events across all teams or filter by team and event type. Team summaries and submissions are fetched separately from event history to keep dashboard refreshes small.
+
 ---
 
 ## 🔒 Anti-Cheating & Fair Play System
 
 Since THE EPOCH was played simultaneously by 15+ teams in a live, competitive setting, a dedicated fair-play system was built to protect the integrity of the investigation.
 
-### Tab & Window Switch Detection
+### Fullscreen & Tab-Switch Detection
 
-The application actively monitors each participant's browser session for tab switches or window/app switches during active gameplay.
+On the first click or keypress, the game requests fullscreen, and it retries after successful login. Browsers require a user gesture for this and let players leave fullscreen (for example with Esc); a website cannot enter fullscreen automatically on page load or disable tab/app switching, operating-system shortcuts, or browser developer tools. Use managed kiosk mode if a station must start in fullscreen.
 
-If a team switches away from the game tab or minimizes the browser mid-investigation:
+When the browser reports that the game tab is hidden during active play:
 
 - The session is **immediately halted**
 - A **GAME HALTED** screen is displayed, along with the exact timestamp of the violation
-- Gameplay cannot continue until an organizer reviews and resumes the session
-- The team's on-screen timer is paused for the duration of the halt, so no time is lost due to a false trigger
+- The team's on-screen timer is paused until an authenticated Game Master resumes the session
 
-This ensured teams could not look up answers, search for hints, or coordinate through another tab while the game was live.
+Exiting fullscreen during active gameplay triggers the same halt, records `FULLSCREEN EXIT` in the server event log, and appears in the GM team dashboard. Other devices using that team ID receive the halted state through server polling.
+
+This is a best-effort visibility check, not a way to prevent switching or prove intent; browser and operating-system behavior can limit what a page detects.
 
 ### Organizer-Controlled Resume
 
 Halted sessions can only be resumed by an organizer through the password-protected **GM Control** panel, keeping the decision to continue or penalize a team entirely in the hands of the event organizers rather than automated logic alone.
 
-### Right-Click & Screenshot Search Prevention
+### Context-Menu Deterrent
 
-Right-click and context-menu access was disabled across the interface to prevent participants from easily reverse-searching evidence, CCTV stills, or on-screen clues (e.g., via Google Lens or similar image-search tools). Long-press image callouts were also disabled for mobile/touch devices for the same reason.
+Right-click and context-menu access is disabled as a usability deterrent. It cannot prevent screenshots, image search, or inspection of content already delivered to the browser.
 
 ### Violation Logging
 
-Every halt event — including the team, timestamp, and reason — was recorded in the organizer's event log, giving organizers a complete audit trail of any fair-play issues across all teams after the event concluded.
+Event logs and team submissions are served only through Game Master-authenticated APIs and are no longer persisted in player browser storage. The server and its operators remain trusted; browser-delivered game clues and client code are still inspectable by a determined player.
 
 ---
 
@@ -401,6 +410,7 @@ Every halt event — including the team, timestamp, and reason — was recorded 
 ### Data Management
 
 - JSON-based team state
+- `data/teams.json` is private runtime data and is ignored by Git; prior commits may still contain historical records
 - Event logging
 - Team progression tracking
 - Investigation timestamps
@@ -522,9 +532,23 @@ npm install
 
 ### Start the Application
 
-```bash
+Set a Game Master password in the server environment before starting. Do not put it in client-side JavaScript or commit it to the repository.
+
+PowerShell:
+
+```powershell
+$env:GM_PASSWORD = "use-a-unique-event-password"
 npm start
 ```
+
+For bash:
+
+```bash
+GM_PASSWORD="use-a-unique-event-password" npm start
+```
+
+For Render, set `GM_PASSWORD` in the service's environment variables. `START_GAME.bat` also requires this variable to be set in the environment from which it is launched.
+Use HTTPS for remote hosting: the built-in LAN server uses HTTP, which does not encrypt the GM password or session cookie in transit. To truly lock stations against switching, use an operating-system/browser kiosk configuration; a web page cannot enforce that restriction.
 
 ### Open
 

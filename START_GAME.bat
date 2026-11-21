@@ -7,6 +7,12 @@ echo   Starting local station server...
 echo ================================================================
 cd /d "%~dp0"
 
+if not defined GM_PASSWORD (
+  echo ERROR: Set the GM_PASSWORD environment variable before launching.
+  pause
+  exit /b 1
+)
+
 echo Starting Node.js server...
 start "THE EPOCH Server" /min cmd /c "node server.js"
 

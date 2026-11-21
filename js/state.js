@@ -17,7 +17,6 @@ import { sound } from './audio.js';
 const BASE_STORAGE_KEY = 'EPOCH_GAME_STATE_V3';
 const TEAM_ID_KEY = 'EPOCH_TEAM_ID';
 const LOCK_PASSWORD = 'SWE-EPOCH-0000';
-const GM_PASSWORD = 'DOOMSDAY-HEHE-SWE';
 const GAME_DURATION_SECONDS = 60 * 60; // 60 minutes
 
 const DEFAULT_STATE = {
@@ -64,8 +63,6 @@ const DEFAULT_STATE = {
   // Terminal
   terminalHistory: [],
 
-  // Full GM Control audit trail
-  eventLog: [] // { ts, iso, clock, teamId, type, message, meta }
 };
 
 export function getISTTimestamp(date = new Date()) {
@@ -136,13 +133,16 @@ class GameState {
       const saved = localStorage.getItem(this.getStorageKey());
       if (saved) {
         const parsed = JSON.parse(saved);
+        const { eventLog, ...playerState } = parsed;
+        if (Array.isArray(eventLog)) {
+          localStorage.setItem(this.getStorageKey(), JSON.stringify(playerState));
+        }
         return {
           ...DEFAULT_STATE,
-          ...parsed,
-          fragments: { ...DEFAULT_STATE.fragments, ...(parsed.fragments || {}) },
-          finalizations: Array.isArray(parsed.finalizations) ? parsed.finalizations : [],
-          cctvCamsViewed: { ...DEFAULT_STATE.cctvCamsViewed, ...(parsed.cctvCamsViewed || {}) },
-          eventLog: Array.isArray(parsed.eventLog) ? parsed.eventLog : []
+          ...playerState,
+          fragments: { ...DEFAULT_STATE.fragments, ...(playerState.fragments || {}) },
+          finalizations: Array.isArray(playerState.finalizations) ? playerState.finalizations : [],
+          cctvCamsViewed: { ...DEFAULT_STATE.cctvCamsViewed, ...(playerState.cctvCamsViewed || {}) }
         };
       }
     } catch (e) {
@@ -182,8 +182,6 @@ class GameState {
       message,
       meta
     };
-    this.data.eventLog.push(entry);
-    if (this.data.eventLog.length > 800) this.data.eventLog.shift();
     this.notify('EVENT_LOGGED', entry);
     this.syncEventToServer(entry);
     return entry;
@@ -239,7 +237,7 @@ class GameState {
     this.pollInterval = setInterval(async () => {
       if (!this.teamId) return;
       try {
-        const res = await fetch(`/api/teams/${this.teamId}`);
+        const res = await fetch(`/api/teams/${encodeURIComponent(this.teamId)}/status`);
         if (!res.ok) return;
         const serverTeam = await res.json();
         
@@ -381,17 +379,32 @@ class GameState {
 
   // ---------------- Anti-cheat: tab switch / app switch ----------------
   triggerTabSwitchViolation() {
+    this.triggerGameplayViolation(
+      'TAB / WINDOW SWITCH',
+      'TAB_SWITCH_VIOLATION',
+      (timestamp) => `Team switched tabs or minimized the browser at ${timestamp}. Game halted pending GM review.`
+    );
+  }
+
+  triggerFullscreenExitViolation() {
+    this.triggerGameplayViolation(
+      'FULLSCREEN EXIT',
+      'FULLSCREEN_EXIT_VIOLATION',
+      (timestamp) => `Team exited fullscreen at ${timestamp}. Game halted pending GM review.`
+    );
+  }
+
+  triggerGameplayViolation(reason, eventType, messageForTimestamp) {
     if (this.data.disqualified) return;
     if (this.data.currentLevel < 1 || this.data.currentLevel >= 6) return; // only during active play
     const timestamp = nowClock();
-    const reason = 'TAB / WINDOW SWITCH';
     this.data.disqualified = true;
     this.data.disqualifiedTimestamp = timestamp;
     this.data.disqualifiedReason = reason;
     this.pauseTimer();
     sound.playError();
-    this.addLog(`VIOLATION: Tab/window switch detected at ${timestamp}. Game halted.`);
-    this.addEvent('TAB_SWITCH_VIOLATION', `Team switched tabs or minimized the browser at ${timestamp}. Game halted pending GM review.`, {
+    this.addLog(`VIOLATION: ${reason} detected at ${timestamp}. Game halted.`);
+    this.addEvent(eventType, messageForTimestamp(timestamp), {
       timestamp,
       reason,
       stage: this.getStageLabel(this.data.currentLevel),
@@ -416,11 +429,12 @@ class GameState {
   // GM-only: clear a violation and resume play
   clearViolation() {
     if (!this.data.disqualified) return;
+    const clearedReason = this.data.disqualifiedReason || 'gameplay';
     this.data.disqualified = false;
     this.data.disqualifiedTimestamp = null;
     this.data.disqualifiedReason = null;
     this.resumeTimer();
-    this.addEvent('VIOLATION_CLEARED', 'GM cleared the tab-switch violation and resumed the game.', { organizerAction: 'RESUME_GAME' });
+    this.addEvent('VIOLATION_CLEARED', `GM cleared the ${clearedReason} violation and resumed the game.`, { organizerAction: 'RESUME_GAME' });
     this.syncStatusToServer();
     
     // Also notify server via resume endpoint
@@ -629,10 +643,6 @@ class GameState {
     return 0;
   }
 
-  verifyGmPassword(pw) {
-    return (pw || '') === GM_PASSWORD;
-  }
-
   forceUnlockThrough(stageKey) {
     const order = ['SLOT1', 'SLOT2', 'NETTRACE_CCTV', 'SLOT3', 'FINAL', 'SOLVED'];
     const idx = order.indexOf(stageKey);
@@ -645,7 +655,7 @@ class GameState {
     if (idx >= 2) { this.data.fragments[3] = 'WS14'; this.data.cctvCamsViewed = { CAM01: true, CAM02: true }; }
     if (idx >= 3) this.data.finalizations.push({ id: '01', name: 'Ram Sharma', type: 'MAIN', timestamp: nowClock(), slot: 3, isCorrect: true });
     if (idx >= 5) {
-      this.data.finalMurderer = 'K. Verma';
+      this.data.finalMurderer = 'GM TEST';
       this.data.finalReasoning = '1) GM test shortcut. 2) GM test shortcut. 3) GM test shortcut.';
       this.data.finalSubmissionTimestamp = nowClock();
       this.data.ramLoginSuccess = true;
