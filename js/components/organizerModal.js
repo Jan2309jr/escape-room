@@ -22,6 +22,7 @@ export class OrganizerModalComponent {
     this.unlocked = false;
     this.pwError = '';
     this.activeTab = 'allteams'; // default to multi-team dashboard for GMs
+    this.selectedControlTeamId = '';
     this.allTeamsData = null;
     this.serverEvents = null;
     this.solutionKey = null;
@@ -112,11 +113,6 @@ export class OrganizerModalComponent {
       return;
     }
 
-    const s = gameState.data;
-    const mins = Math.floor(s.timerSeconds / 60);
-    const secs = s.timerSeconds % 60;
-    const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
     this.modal.innerHTML = `
       <div class="organizer-drawer-card">
         <div class="org-header">
@@ -137,13 +133,13 @@ export class OrganizerModalComponent {
         <div class="org-body-tabs">
           ${this.activeTab === 'allteams' ? this.renderAllTeamsTab() : ''}
           ${this.activeTab === 'submissions' ? this.renderSubmissionsTab() : ''}
-          ${this.activeTab === 'stage' ? this.renderStageTab(s, timeFormatted) : ''}
+          ${this.activeTab === 'stage' ? this.renderStageTab() : ''}
           ${this.activeTab === 'log' ? this.renderLogTab() : ''}
         </div>
       </div>
     `;
 
-    if (['allteams', 'submissions', 'log'].includes(this.activeTab) && this.allTeamsData === null) {
+    if (['allteams', 'submissions', 'stage'].includes(this.activeTab) && this.allTeamsData === null) {
       this.fetchAllTeams();
     }
     if (this.activeTab === 'log' && this.serverEvents === null) {
@@ -242,53 +238,90 @@ export class OrganizerModalComponent {
     `;
   }
 
-  renderStageTab(s, timeFormatted) {
+  renderStageTab() {
+    const teams = this.allTeamsData && this.allTeamsData !== false ? this.allTeamsData : {};
+    const teamIds = Object.keys(teams).sort();
+    if (!teamIds.includes(this.selectedControlTeamId)) {
+      this.selectedControlTeamId = teamIds[0] || '';
+    }
+    const team = teams[this.selectedControlTeamId];
+    const remaining = team && team.timerRunning && team.startTime
+      ? Math.max(0, 3600 - Math.floor((Date.now() - team.startTime) / 1000))
+      : Number(team && team.timerSeconds) || 0;
+    const timeFormatted = `${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}`;
+    const stageLabel = !team || team.stage === 0
+      ? 'LOCK SCREEN'
+      : team.stage === 6
+        ? 'CASE CLOSED'
+        : `ACTIVE — ${team.finalizationCount || 0} / 3 EVIDENCE SLOTS`;
+    const status = !team
+      ? 'NO TEAM SELECTED'
+      : team.gameHalted
+        ? 'GAME HALTED'
+        : team.stage === 6 || team.wipeStopped
+          ? 'COMPLETED'
+          : team.startTime
+            ? 'ACTIVE'
+            : 'NOT STARTED';
+
     return `
       <div class="org-section">
-        <h3>🏷 CURRENT STATION TEAM IDENTITY</h3>
+        <h3>🏷 SELECT A TEAM TO CONTROL</h3>
         <div class="timer-control-bar">
-          <input type="text" id="team-id-input" class="cyber-input" style="max-width:220px;" placeholder="e.g. TEAM01" value="${escapeHtml(gameState.teamId || '')}">
-          <button class="org-ctrl-btn" id="set-team-id-btn">SET TEAM ID</button>
+          <label for="gm-control-team-select">Team</label>
+          <select id="gm-control-team-select" class="cyber-input" ${teamIds.length ? '' : 'disabled'}>
+            ${teamIds.length
+              ? teamIds.map((id) => `<option value="${escapeHtml(id)}" ${id === this.selectedControlTeamId ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')
+              : '<option value="">No teams recorded</option>'}
+          </select>
+          <button class="org-ctrl-btn" id="refresh-teams-btn">🔄 Refresh Teams</button>
         </div>
+        ${this.allTeamsData === null ? '<p class="org-sub">Loading teams…</p>' : ''}
+        ${this.allTeamsData === false ? '<p class="org-team-action-error" role="alert">Could not load teams from the server.</p>' : ''}
+        ${team ? `
+          <div class="timer-control-bar">
+            <span><strong>Status:</strong> ${escapeHtml(status)}</span>
+            <span><strong>Station:</strong> ${escapeHtml(stageLabel)}</span>
+            <span><strong>Timer:</strong> <code>${timeFormatted}</code> ${team.timerRunning ? 'RUNNING' : 'PAUSED'}</span>
+            <span><strong>Last activity:</strong> ${escapeHtml(team.lastUpdate || '—')}</span>
+          </div>
+          ${team.gameHalted ? `
+            <p class="org-team-action-error">Halted: ${escapeHtml(team.haltReason || 'Gameplay violation')} (${escapeHtml(team.haltTimestamp || 'time unavailable')})</p>
+            <button id="clear-violation-btn" class="org-ctrl-btn">▶ CLEAR HALT & RESUME TEAM</button>
+          ` : ''}
+        ` : '<p class="org-sub">Teams appear here after a player device connects to the game server.</p>'}
+        ${this.teamActionError ? `<p class="org-team-action-error" role="alert">${escapeHtml(this.teamActionError)}</p>` : ''}
       </div>
-
-      ${s.disqualified ? `
-      <div class="org-section violation-section" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); padding: 16px; border-radius: 8px;">
-        <h3 style="color: #fca5a5;">🚨 TAB-SWITCH VIOLATION ACTIVE FOR THIS STATION</h3>
-        <p class="org-sub">This team's game was halted at <strong>${escapeHtml(s.disqualifiedTimestamp || 'recently')}</strong> for: <strong>${escapeHtml(s.disqualifiedReason || 'TAB / WINDOW SWITCH')}</strong>.</p>
-        <button id="clear-violation-btn" class="danger-reset-btn" style="margin-top: 10px;">✅ CLEAR VIOLATION & RESUME GAME</button>
-      </div>
-      ` : ''}
 
       <div class="org-section">
-        <h3>⏱ REMOTE WIPE TIMER (60 MIN, SERVER-ANCHORED)</h3>
+        <h3>⏱ REMOTE WIPE TIMER — ${escapeHtml(this.selectedControlTeamId || 'SELECT A TEAM')}</h3>
         <div class="timer-control-bar">
           <div class="org-timer-display">${timeFormatted}</div>
-          <button class="org-ctrl-btn" id="org-pause-btn">${s.timerRunning ? '⏸ Pause Timer' : '▶ Resume Timer'}</button>
-          <button class="org-ctrl-btn" id="org-add5-btn">+5 Minutes</button>
-          <button class="org-ctrl-btn" id="org-sub5-btn">-5 Minutes</button>
-          <button class="org-ctrl-btn" id="org-set60-btn">Reset to 60m</button>
+          <button class="org-ctrl-btn" id="org-pause-btn" ${team ? '' : 'disabled'}>${team && team.timerRunning ? '⏸ Pause Timer' : '▶ Resume Timer'}</button>
+          <button class="org-ctrl-btn" id="org-add5-btn" ${team ? '' : 'disabled'}>+5 Minutes</button>
+          <button class="org-ctrl-btn" id="org-sub5-btn" ${team ? '' : 'disabled'}>-5 Minutes</button>
+          <button class="org-ctrl-btn" id="org-set60-btn" ${team ? '' : 'disabled'}>Reset to 60m</button>
         </div>
-        <p class="org-sub">Timer is anchored to a start timestamp — refreshing the browser will NOT reset it.</p>
+        <p class="org-sub">Timer changes are sent to the selected team and applied on its player device.</p>
       </div>
 
       <div class="org-section">
-        <h3>⚡ QUICK STAGE JUMP (FOR GM ASSISTANCE)</h3>
+        <h3>⚡ QUICK STAGE JUMP — ${escapeHtml(this.selectedControlTeamId || 'SELECT A TEAM')}</h3>
         <div class="stage-jump-grid">
-          <button class="stage-btn" data-stage="RESET">RESET — Lock Screen</button>
-          <button class="stage-btn" data-stage="SLOT1">Through: Slot 1 Finalized</button>
-          <button class="stage-btn" data-stage="SLOT2">Through: Slot 2 Finalized</button>
-          <button class="stage-btn" data-stage="NETTRACE_CCTV">Through: nettrace + CCTV</button>
-          <button class="stage-btn" data-stage="SLOT3">Through: Slot 3 Finalized</button>
-          <button class="stage-btn" data-stage="FINAL">Through: Final Unlocked</button>
-          <button class="stage-btn" data-stage="SOLVED">Through: Case Solved</button>
+          <button class="stage-btn" data-stage="RESET" ${team ? '' : 'disabled'}>RESET — Lock Screen</button>
+          <button class="stage-btn" data-stage="SLOT1" ${team ? '' : 'disabled'}>Through: Slot 1 Finalized</button>
+          <button class="stage-btn" data-stage="SLOT2" ${team ? '' : 'disabled'}>Through: Slot 2 Finalized</button>
+          <button class="stage-btn" data-stage="NETTRACE_CCTV" ${team ? '' : 'disabled'}>Through: nettrace + CCTV</button>
+          <button class="stage-btn" data-stage="SLOT3" ${team ? '' : 'disabled'}>Through: Slot 3 Finalized</button>
+          <button class="stage-btn" data-stage="FINAL" ${team ? '' : 'disabled'}>Through: Final Unlocked</button>
+          <button class="stage-btn" data-stage="SOLVED" ${team ? '' : 'disabled'}>Through: Case Solved</button>
         </div>
       </div>
 
       <div class="org-section">
-        <h3>🔄 COMPLETE STATION RESET (FOR NEXT TEAM)</h3>
-        <p class="org-sub">Clears all local progress and restarts from State 0 for this station.</p>
-        <button id="org-full-reset-btn" class="danger-reset-btn">⚠ FULL GAME RESET FOR NEXT TEAM</button>
+        <h3>🔄 RESET SELECTED TEAM</h3>
+        <p class="org-sub">Clears the selected team's local progress and returns its connected player device to the lock screen.</p>
+        <button id="org-full-reset-btn" class="danger-reset-btn" ${team ? '' : 'disabled'}>⚠ FULL GAME RESET FOR SELECTED TEAM</button>
       </div>
 
       <div class="org-section">
@@ -401,6 +434,9 @@ export class OrganizerModalComponent {
       } else if (activeTabContent && this.activeTab === 'log') {
         activeTabContent.innerHTML = this.renderLogTab();
         this.bindEvents();
+      } else if (activeTabContent && this.activeTab === 'stage') {
+        activeTabContent.innerHTML = this.renderStageTab();
+        this.bindEvents();
       }
     }
   }
@@ -468,18 +504,38 @@ export class OrganizerModalComponent {
   async resumeTeamOnServer(teamId) {
     try {
       const res = await fetch(`/api/teams/${encodeURIComponent(teamId)}/resume`, { method: 'POST' });
-      if (res.ok) {
-        sound.playSuccess();
-        // If resuming current station team, also clear local state
-        if (teamId.toUpperCase() === (gameState.teamId || '').toUpperCase()) {
-          gameState.clearViolation();
-        }
-        await this.fetchAllTeams();
-      } else {
-        sound.playError();
-      }
-    } catch (e) {
+      if (res.status === 401) return this.lockExpiredSession();
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
+      this.teamActionError = '';
+      sound.playSuccess();
+      await this.fetchAllTeams();
+    } catch (error) {
+      this.teamActionError = `Could not resume Team ${teamId}: ${error.message}`;
       sound.playError();
+      this.render();
+      this.bindEvents();
+    }
+  }
+
+  async controlTeamOnServer(teamId, type, action) {
+    if (!teamId) return;
+    try {
+      const res = await fetch(`/api/teams/${encodeURIComponent(teamId)}/control`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, action })
+      });
+      if (res.status === 401) return this.lockExpiredSession();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || `Server returned HTTP ${res.status}.`);
+      this.teamActionError = '';
+      sound.playSuccess();
+      await this.fetchAllTeams();
+    } catch (error) {
+      this.teamActionError = `Could not control Team ${teamId}: ${error.message}`;
+      sound.playError();
+      this.render();
+      this.bindEvents();
     }
   }
 
@@ -541,7 +597,7 @@ export class OrganizerModalComponent {
     this.modal.querySelectorAll('.org-tab-btn').forEach(btn => {
       btn.onclick = () => {
         this.activeTab = btn.getAttribute('data-tab');
-        if (this.activeTab === 'allteams' || this.activeTab === 'submissions') this.allTeamsData = null;
+        if (['allteams', 'submissions', 'stage'].includes(this.activeTab)) this.allTeamsData = null;
         if (this.activeTab === 'log') this.serverEvents = null;
         sound.playKeyClick();
         this.render();
@@ -576,6 +632,14 @@ export class OrganizerModalComponent {
       this.bindEvents();
     };
 
+    const controlTeamSelect = this.modal.querySelector('#gm-control-team-select');
+    if (controlTeamSelect) controlTeamSelect.onchange = () => {
+      this.selectedControlTeamId = controlTeamSelect.value;
+      this.teamActionError = '';
+      this.render();
+      this.bindEvents();
+    };
+
     // Multi-team GM Resume handler
     this.modal.querySelectorAll('.gm-resume-team-btn').forEach(btn => {
       btn.onclick = () => {
@@ -591,59 +655,36 @@ export class OrganizerModalComponent {
       };
     });
 
-    const setTeamIdBtn = this.modal.querySelector('#set-team-id-btn');
-    const teamIdInput = this.modal.querySelector('#team-id-input');
-    if (setTeamIdBtn && teamIdInput) {
-      setTeamIdBtn.onclick = () => {
-        gameState.setTeamId(teamIdInput.value);
-        sound.playSuccess();
-        this.render();
-        this.bindEvents();
-      };
-    }
-
     this.modal.querySelectorAll('.stage-btn').forEach(btn => {
       btn.onclick = () => {
         const stage = btn.getAttribute('data-stage');
-        if (stage === 'RESET') {
-          gameState.resetGame();
-        } else {
-          gameState.forceUnlockThrough(stage);
-        }
-        sound.playSuccess();
-        this.render();
-        this.bindEvents();
+        if (stage === 'RESET' && !confirm(`Reset Team ${this.selectedControlTeamId} and clear its game progress?`)) return;
+        this.controlTeamOnServer(this.selectedControlTeamId, 'stage', stage);
       };
     });
 
     const pauseBtn = this.modal.querySelector('#org-pause-btn');
-    if (pauseBtn) pauseBtn.onclick = () => {
-      if (gameState.data.timerRunning) gameState.pauseTimer(); else gameState.resumeTimer();
-      this.render(); this.bindEvents();
-    };
+    if (pauseBtn) pauseBtn.onclick = () => this.controlTeamOnServer(
+      this.selectedControlTeamId,
+      'timer',
+      this.allTeamsData[this.selectedControlTeamId].timerRunning ? 'pause' : 'resume'
+    );
 
     const add5Btn = this.modal.querySelector('#org-add5-btn');
-    if (add5Btn) add5Btn.onclick = () => { gameState.addTime(300); this.render(); this.bindEvents(); };
+    if (add5Btn) add5Btn.onclick = () => this.controlTeamOnServer(this.selectedControlTeamId, 'timer', 'add5');
     const sub5Btn = this.modal.querySelector('#org-sub5-btn');
-    if (sub5Btn) sub5Btn.onclick = () => { gameState.addTime(-300); this.render(); this.bindEvents(); };
+    if (sub5Btn) sub5Btn.onclick = () => this.controlTeamOnServer(this.selectedControlTeamId, 'timer', 'sub5');
     const set60Btn = this.modal.querySelector('#org-set60-btn');
-    if (set60Btn) set60Btn.onclick = () => { gameState.setTimerMinutes(60); this.render(); this.bindEvents(); };
+    if (set60Btn) set60Btn.onclick = () => this.controlTeamOnServer(this.selectedControlTeamId, 'timer', 'reset60');
 
     const resetBtn = this.modal.querySelector('#org-full-reset-btn');
     if (resetBtn) resetBtn.onclick = () => {
-      if (confirm("Reset the entire escape game station for the next team? All progress will be wiped.")) {
-        gameState.resetGame();
-        sound.playSuccess();
-        this.hide();
+      if (confirm(`Reset Team ${this.selectedControlTeamId} and clear its game progress?`)) {
+        this.controlTeamOnServer(this.selectedControlTeamId, 'stage', 'RESET');
       }
     };
 
     const clearViolationBtn = this.modal.querySelector('#clear-violation-btn');
-    if (clearViolationBtn) clearViolationBtn.onclick = () => {
-      gameState.clearViolation();
-      sound.playSuccess();
-      this.render();
-      this.bindEvents();
-    };
+    if (clearViolationBtn) clearViolationBtn.onclick = () => this.resumeTeamOnServer(this.selectedControlTeamId);
   }
 }

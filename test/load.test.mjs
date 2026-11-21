@@ -135,6 +135,30 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   assert.equal(publicStatus.events, undefined);
   assert.equal(publicStatus.finalReasoning, undefined);
 
+  const anonymousControl = await fetch(`${baseUrl}/api/teams/${ids[0]}/control`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'timer', action: 'add5' })
+  });
+  assert.equal(anonymousControl.status, 401);
+
+  const controlResponse = await fetch(`${baseUrl}/api/teams/${ids[0]}/control`, {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'timer', action: 'add5' })
+  });
+  assert.equal(controlResponse.status, 200);
+  const controlledTeamStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/status`).then((response) => response.json());
+  assert.deepEqual(controlledTeamStatus.gmCommand, { id: 1, type: 'timer', action: 'add5' });
+  assert.equal(controlledTeamStatus.timerSeconds, 3900);
+
+  const invalidControl = await fetch(`${baseUrl}/api/teams/${ids[0]}/control`, {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'stage', action: 'DELETE_ALL' })
+  });
+  assert.equal(invalidControl.status, 400);
+
   await new Promise((resolve) => setTimeout(resolve, 400));
   const persistedTeams = JSON.parse(await fs.readFile(path.join(dataDir, 'teams.json'), 'utf8'));
   assert.equal(Object.keys(persistedTeams).length, 50);

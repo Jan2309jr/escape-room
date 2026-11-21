@@ -27,6 +27,7 @@ const DEFAULT_STATE = {
   timerRunning: true,
   timerExpired: false,
   timerSeconds: GAME_DURATION_SECONDS,
+  lastGmCommandId: 0,
 
   // Recovered evidence tokens/fragments
   fragments: {
@@ -200,6 +201,8 @@ class GameState {
           haltTimestamp: this.data.disqualifiedTimestamp,
           startTime: this.data.startTime,
           timerSeconds: this.data.timerSeconds,
+          timerRunning: this.data.timerRunning,
+          timerExpired: this.data.timerExpired,
           finalMurderer: this.data.finalMurderer,
           finalReasoning: this.data.finalReasoning,
           finalSubmissionTimestamp: this.data.finalSubmissionTimestamp,
@@ -222,6 +225,8 @@ class GameState {
           haltTimestamp: this.data.disqualifiedTimestamp,
           startTime: this.data.startTime,
           timerSeconds: this.data.timerSeconds,
+          timerRunning: this.data.timerRunning,
+          timerExpired: this.data.timerExpired,
           finalMurderer: this.data.finalMurderer,
           finalReasoning: this.data.finalReasoning,
           finalSubmissionTimestamp: this.data.finalSubmissionTimestamp,
@@ -240,6 +245,10 @@ class GameState {
         const res = await fetch(`/api/teams/${encodeURIComponent(this.teamId)}/status`);
         if (!res.ok) return;
         const serverTeam = await res.json();
+
+        if (serverTeam.gmCommand && serverTeam.gmCommand.id > (this.data.lastGmCommandId || 0)) {
+          this.applyGmCommand(serverTeam.gmCommand);
+        }
         
         // If server says game is NOT halted, but local state IS disqualified -> GM Resumed!
         if (serverTeam.gameHalted === false && this.data.disqualified) {
@@ -259,6 +268,26 @@ class GameState {
         }
       } catch (e) {}
     }, 2500);
+  }
+
+  applyGmCommand(command) {
+    this.data.lastGmCommandId = command.id;
+    this.saveState();
+
+    if (command.type === 'stage') {
+      if (command.action === 'RESET') this.resetGame();
+      else this.forceUnlockThrough(command.action);
+    } else if (command.type === 'timer') {
+      if (command.action === 'pause') this.pauseTimer();
+      else if (command.action === 'resume') this.resumeTimer();
+      else if (command.action === 'add5') this.addTime(300);
+      else if (command.action === 'sub5') this.addTime(-300);
+      else if (command.action === 'reset60') this.setTimerMinutes(60);
+    }
+
+    this.data.lastGmCommandId = command.id;
+    this.saveState();
+    this.syncStatusToServer();
   }
 
   addLog(msg) {
@@ -296,6 +325,11 @@ class GameState {
   }
 
   pauseTimer() {
+    if (this.data.startTime && this.data.timerRunning) {
+      const elapsed = Math.floor((Date.now() - this.data.startTime) / 1000);
+      this.data.timerSeconds = Math.max(0, GAME_DURATION_SECONDS - elapsed);
+      this.data.startTime = Date.now() - (GAME_DURATION_SECONDS - this.data.timerSeconds) * 1000;
+    }
     this.data.timerRunning = false;
     this.notify('TIMER_PAUSED', {});
   }
@@ -308,10 +342,11 @@ class GameState {
   }
 
   addTime(seconds) {
-    if (!this.data.startTime) return;
-    this.data.startTime += seconds * 1000;
-    const elapsed = Math.floor((Date.now() - this.data.startTime) / 1000);
-    this.data.timerSeconds = Math.max(0, GAME_DURATION_SECONDS - elapsed);
+    const remaining = this.data.startTime
+      ? Math.max(0, GAME_DURATION_SECONDS - Math.floor((Date.now() - this.data.startTime) / 1000))
+      : this.data.timerSeconds;
+    this.data.timerSeconds = Math.max(0, remaining + seconds);
+    this.data.startTime = Date.now() - (GAME_DURATION_SECONDS - this.data.timerSeconds) * 1000;
     this.data.timerExpired = this.data.timerSeconds <= 0;
     this.addEvent('TIMER_ADJUSTED', `GM adjusted timer by ${seconds >= 0 ? '+' : ''}${Math.round(seconds / 60)} minute(s).`);
     this.notify('TIMER_CHANGED', { seconds: this.data.timerSeconds });

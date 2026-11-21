@@ -306,6 +306,7 @@ The organizer interface can track team-specific information such as:
 Organizer controls also support:
 
 - Monitoring teams
+- Selecting one active team for station jumps, timer adjustments, and full reset
 - Reviewing submissions
 - Halting a team session
 - Resuming a halted session

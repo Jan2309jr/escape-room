@@ -75,6 +75,10 @@ function initTeam(id) {
       haltTimestamp: null,
       startTime: null,
       timerSeconds: 3600,
+      timerRunning: true,
+      timerExpired: false,
+      gmCommandId: 0,
+      gmCommand: null,
       finalizations: [],
       finalMurderer: null,
       finalReasoning: null,
@@ -164,13 +168,15 @@ app.get('/api/status', (req, res) => {
 
 // Central multi-team event endpoint
 app.post('/api/event', (req, res) => {
-  const { teamId, stage, startTime, timerSeconds, event, gameHalted, haltReason, haltTimestamp, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = req.body || {};
+  const { teamId, stage, startTime, timerSeconds, timerRunning, timerExpired, event, gameHalted, haltReason, haltTimestamp, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = req.body || {};
   const id = (teamId || 'UNASSIGNED').toString().toUpperCase();
 
   const t = initTeam(id);
   t.stage = stage !== undefined ? stage : t.stage;
   t.startTime = startTime !== undefined ? startTime : t.startTime;
   t.timerSeconds = timerSeconds !== undefined ? timerSeconds : t.timerSeconds;
+  t.timerRunning = timerRunning !== undefined ? timerRunning : t.timerRunning;
+  t.timerExpired = timerExpired !== undefined ? timerExpired : t.timerExpired;
   t.gameHalted = gameHalted !== undefined ? gameHalted : t.gameHalted;
   t.haltReason = haltReason !== undefined ? haltReason : t.haltReason;
   t.haltTimestamp = haltTimestamp !== undefined ? haltTimestamp : t.haltTimestamp;
@@ -198,13 +204,19 @@ app.get('/api/teams/:id/status', (req, res) => {
   res.json(t ? {
     teamId: t.teamId,
     stage: t.stage,
+    startTime: t.startTime,
+    timerSeconds: t.timerSeconds,
+    timerRunning: t.timerRunning !== false,
+    timerExpired: !!t.timerExpired,
+    gmCommand: t.gmCommand || null,
     gameHalted: t.gameHalted,
     haltReason: t.haltReason,
     haltTimestamp: t.haltTimestamp,
     lastUpdate: t.lastUpdate
   } : {
     teamId: req.params.id.toUpperCase(),
-    gameHalted: false
+    gameHalted: false,
+    gmCommand: null
   });
 });
 
@@ -221,6 +233,8 @@ app.post('/api/teams/:id/status', (req, res) => {
     haltTimestamp: data.haltTimestamp !== undefined ? data.haltTimestamp : t.haltTimestamp,
     startTime: data.startTime !== undefined ? data.startTime : t.startTime,
     timerSeconds: data.timerSeconds !== undefined ? data.timerSeconds : t.timerSeconds,
+    timerRunning: data.timerRunning !== undefined ? data.timerRunning : t.timerRunning,
+    timerExpired: data.timerExpired !== undefined ? data.timerExpired : t.timerExpired,
     finalMurderer: data.finalMurderer !== undefined ? data.finalMurderer : t.finalMurderer,
     finalReasoning: data.finalReasoning !== undefined ? data.finalReasoning : t.finalReasoning,
     finalSubmissionTimestamp: data.finalSubmissionTimestamp !== undefined ? data.finalSubmissionTimestamp : t.finalSubmissionTimestamp,
@@ -262,6 +276,81 @@ app.post('/api/teams/:id/resume', requireGm, (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/teams/:id/control', requireGm, (req, res) => {
+  const id = req.params.id.toUpperCase();
+  const team = initTeam(id);
+  const { type, action } = req.body || {};
+  const stageActions = ['RESET', 'SLOT1', 'SLOT2', 'NETTRACE_CCTV', 'SLOT3', 'FINAL', 'SOLVED'];
+  const timerActions = ['pause', 'resume', 'add5', 'sub5', 'reset60'];
+
+  if (!((type === 'stage' && stageActions.includes(action)) || (type === 'timer' && timerActions.includes(action)))) {
+    return res.status(400).json({ error: 'Invalid team control command.' });
+  }
+
+  if (type === 'stage' && action === 'RESET') {
+    Object.assign(team, {
+      stage: 0,
+      gameHalted: false,
+      haltReason: null,
+      haltTimestamp: null,
+      startTime: null,
+      timerSeconds: 3600,
+      timerRunning: true,
+      timerExpired: false,
+      finalizations: [],
+      finalMurderer: null,
+      finalReasoning: null,
+      finalSubmissionTimestamp: null,
+      wipeStopped: false
+    });
+  } else if (type === 'timer') {
+    const remaining = team.timerRunning && Number.isFinite(team.startTime)
+      ? Math.max(0, 3600 - Math.floor((Date.now() - team.startTime) / 1000))
+      : Math.max(0, Number(team.timerSeconds) || 0);
+
+    if (action === 'pause') {
+      team.timerSeconds = remaining;
+      if (Number.isFinite(team.startTime)) team.startTime = Date.now() - (3600 - remaining) * 1000;
+      team.timerRunning = false;
+    } else if (action === 'resume') {
+      if (!team.timerExpired) team.timerRunning = true;
+    } else if (action === 'reset60') {
+      team.startTime = Date.now();
+      team.timerSeconds = 3600;
+      team.timerExpired = false;
+    } else {
+      const adjustment = action === 'add5' ? 300 : -300;
+      team.timerSeconds = Math.max(0, remaining + adjustment);
+      team.startTime = Date.now() - (3600 - team.timerSeconds) * 1000;
+      team.timerExpired = team.timerSeconds === 0;
+    }
+  } else {
+    team.stage = action === 'SOLVED' ? 6 : 1;
+    team.gameHalted = false;
+    team.haltReason = null;
+    team.haltTimestamp = null;
+  }
+
+  team.gmCommandId = (Number(team.gmCommandId) || 0) + 1;
+  team.gmCommand = { id: team.gmCommandId, type, action };
+  team.lastUpdate = getISTTimestamp();
+  const controlEvent = {
+    ts: Date.now(),
+    iso: new Date().toISOString(),
+    clock: getISTTimestamp(),
+    teamId: id,
+    type: 'GM_TEAM_CONTROL',
+    message: `GM applied ${type} control "${action}" to Team ${id}.`,
+    meta: { type, action }
+  };
+  team.events.push(controlEvent);
+  if (team.events.length > 500) team.events.shift();
+  team.lastEvent = controlEvent;
+
+  persistTeams();
+  res.json({ ok: true, commandId: team.gmCommandId });
+});
+
 // Return summaries by default; submissions are fetched separately to avoid transferring logs.
 app.get('/api/teams', requireGm, (req, res) => {
   const view = req.query.view;
@@ -279,6 +368,11 @@ app.get('/api/teams', requireGm, (req, res) => {
     result[id] = {
       teamId: team.teamId,
       stage: team.stage,
+      startTime: team.startTime,
+      timerSeconds: team.timerSeconds,
+      timerRunning: team.timerRunning !== false,
+      timerExpired: !!team.timerExpired,
+      finalizationCount: Array.isArray(team.finalizations) ? team.finalizations.length : 0,
       gameHalted: team.gameHalted,
       haltReason: team.haltReason,
       haltTimestamp: team.haltTimestamp,
