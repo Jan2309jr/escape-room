@@ -16,7 +16,7 @@ import { sound } from './audio.js';
 
 const BASE_STORAGE_KEY = 'EPOCH_GAME_STATE_V3';
 const TEAM_ID_KEY = 'EPOCH_TEAM_ID';
-const LOCK_PASSWORD = 'SWE-EPOCH-0000';
+const LOCK_PASSWORD = 'yayyougotthepassword';
 const GAME_DURATION_SECONDS = 60 * 60; // 60 minutes
 
 const DEFAULT_STATE = {

@@ -470,7 +470,6 @@ export class NetworkViewerComponent {
         <p style="margin-top:14px;">ASSIGNED TO &nbsp;<span class="fw-amber">${d.user}</span> · ${d.station}<br>
            INTERNAL IP &nbsp;<span class="fw-amber">${EVIDENCE_IP}</span><br>
            SESSION AT &nbsp;<span class="fw-amber">03:41:38</span> — credentials accepted, no failed login attempts<br>
-           WS-14 LOGIN &nbsp;USERNAME: <span class="fw-amber">ramsharma@epoch</span> · PASSWORD: <span class="fw-amber">ramsharma123</span><br>
            DATABASE ACCESS &nbsp;<span class="fw-amber">WRITE</span></p>
         <div class="fw-hr"></div>
         <p>The firewall only confirms which terminal opened the session — not who was physically sitting at it that night. Cross-reference this workstation against the CCTV footage before drawing a conclusion.</p>

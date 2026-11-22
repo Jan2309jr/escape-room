@@ -329,6 +329,10 @@ app.post('/api/teams/:id/control', requireGm, (req, res) => {
     team.gameHalted = false;
     team.haltReason = null;
     team.haltTimestamp = null;
+    if (action === 'SOLVED') {
+      team.timerRunning = false;
+      team.wipeStopped = true;
+    }
   }
 
   team.gmCommandId = (Number(team.gmCommandId) || 0) + 1;

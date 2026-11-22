@@ -39,7 +39,7 @@ async function waitForServer() {
   throw new Error('Test server did not start within five seconds.');
 }
 
-test('serves 50 concurrent teams and shows every team in the GM dashboard', async (context) => {
+test('serves 75 concurrent teams and lets the GM inspect and manage them', async (context) => {
   dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'epoch-load-test-'));
   const port = await getFreePort();
   baseUrl = `http://127.0.0.1:${port}`;
@@ -65,7 +65,8 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   assert.equal(login.status, 200);
   cookie = login.headers.get('set-cookie').split(';')[0];
 
-  const ids = Array.from({ length: 50 }, (_, index) => `TEST_TEAM_${String(index + 1).padStart(2, '0')}`);
+  const teamCount = 75;
+  const ids = Array.from({ length: teamCount }, (_, index) => `TEST_TEAM_${String(index + 1).padStart(2, '0')}`);
   const startedAt = Date.now();
   const requests = ids.flatMap((teamId, index) => [
     fetch(`${baseUrl}/api/event`, {
@@ -74,19 +75,31 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
       body: JSON.stringify({
         teamId,
         stage: 1,
+        ...(index === teamCount - 1 ? {
+          finalMurderer: 'K. Verma',
+          finalReasoning: 'Grant funds went to NULLDEPT; the car was in Slot B-14; WS-14 traces connect the wipe to the incident.',
+          finalSubmissionTimestamp: '10:15:00 IST',
+          finalizations: [
+            { id: '02', name: 'Prof. Anand Rao', slot: 1 },
+            { id: '05', name: 'Divya Mehta', slot: 2 },
+            { id: '01', name: 'Ram Sharma', slot: 3 }
+          ]
+        } : {}),
         event: { ts: Date.now() + index, teamId, type: 'LOAD_TEST', message: 'Load-test event', meta: {} }
       })
     }),
     fetch(`${baseUrl}/api/teams/${encodeURIComponent(teamId)}/status`)
   ]);
   const responses = await Promise.all(requests);
-  assert.equal(responses.length, 100);
+  assert.equal(responses.length, teamCount * 2);
   assert.ok(responses.every((response) => response.ok));
-  assert.equal(Date.now() - startedAt < 10000, true, '50 concurrent event posts and polls should finish within 10 seconds');
+  assert.equal(Date.now() - startedAt < 10000, true, '75 concurrent event posts and polls should finish within 10 seconds');
 
   const authHeaders = { Cookie: cookie };
   const anonymousEvents = await fetch(`${baseUrl}/api/events`);
   assert.equal(anonymousEvents.status, 401);
+  const anonymousSolution = await fetch(`${baseUrl}/api/gm/solution`);
+  assert.equal(anonymousSolution.status, 401);
   const [teamResponse, submissionResponse, eventResponse] = await Promise.all([
     fetch(`${baseUrl}/api/teams`, { headers: authHeaders }),
     fetch(`${baseUrl}/api/teams?view=submissions`, { headers: authHeaders }),
@@ -100,13 +113,16 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   ]);
   assert.deepEqual(Object.keys(teams).sort(), [...ids].sort());
   assert.deepEqual(Object.keys(submissions).sort(), [...ids].sort());
-  assert.equal(events.filter((event) => event.type === 'LOAD_TEST').length, 50);
+  assert.equal(events.filter((event) => event.type === 'LOAD_TEST').length, teamCount);
   assert.equal(teams[ids[0]].events, undefined);
   assert.equal(teams[ids[0]].finalReasoning, undefined);
   assert.equal(submissions[ids[0]].events, undefined);
+  assert.equal(submissions[ids[teamCount - 1]].finalMurderer, 'K. Verma');
+  assert.ok(submissions[ids[teamCount - 1]].finalReasoning.includes('NULLDEPT'));
+  assert.equal(teams[ids[teamCount - 1]].finalizationCount, 3);
 
   const dashboardRows = renderTeamRows(teams);
-  assert.equal((dashboardRows.match(/<tr class=/g) || []).length, 50);
+  assert.equal((dashboardRows.match(/<tr class=/g) || []).length, teamCount);
   ids.forEach((teamId) => assert.ok(dashboardRows.includes(teamId), `GM dashboard omitted ${teamId}`));
 
   const violationResponse = await fetch(`${baseUrl}/api/event`, {
@@ -131,6 +147,14 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   const teamEvents = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/events`, { headers: authHeaders }).then((response) => response.json());
   assert.ok(teamEvents.some((event) => event.type === 'FULLSCREEN_EXIT_VIOLATION'));
 
+  const resumeResponse = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/resume`, {
+    method: 'POST',
+    headers: authHeaders
+  });
+  assert.equal(resumeResponse.status, 200);
+  const resumedStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/status`).then((response) => response.json());
+  assert.equal(resumedStatus.gameHalted, false);
+
   const publicStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/status`).then((response) => response.json());
   assert.equal(publicStatus.events, undefined);
   assert.equal(publicStatus.finalReasoning, undefined);
@@ -142,13 +166,13 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   });
   assert.equal(anonymousControl.status, 401);
 
-  const controlResponse = await fetch(`${baseUrl}/api/teams/${ids[0]}/control`, {
+  const controlResponse = await fetch(`${baseUrl}/api/teams/${ids[teamCount - 1]}/control`, {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'timer', action: 'add5' })
   });
   assert.equal(controlResponse.status, 200);
-  const controlledTeamStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[0])}/status`).then((response) => response.json());
+  const controlledTeamStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[teamCount - 1])}/status`).then((response) => response.json());
   assert.deepEqual(controlledTeamStatus.gmCommand, { id: 1, type: 'timer', action: 'add5' });
   assert.equal(controlledTeamStatus.timerSeconds, 3900);
 
@@ -159,9 +183,27 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   });
   assert.equal(invalidControl.status, 400);
 
+  const solutionResponse = await fetch(`${baseUrl}/api/gm/solution`, { headers: authHeaders });
+  assert.equal(solutionResponse.status, 200);
+  const solution = await solutionResponse.json();
+  assert.equal(solution.filter((item) => item.verdict === 'CULPRIT').length, 1);
+  assert.equal(solution.find((item) => item.verdict === 'CULPRIT').person, 'K. Verma');
+
+  const solvedResponse = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[teamCount - 1])}/control`, {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'stage', action: 'SOLVED' })
+  });
+  assert.equal(solvedResponse.status, 200);
+  const solvedStatus = await fetch(`${baseUrl}/api/teams/${encodeURIComponent(ids[teamCount - 1])}/status`).then((response) => response.json());
+  assert.equal(solvedStatus.stage, 6);
+  assert.equal(solvedStatus.timerRunning, false);
+  const solvedTeamSummaries = await fetch(`${baseUrl}/api/teams`, { headers: authHeaders }).then((response) => response.json());
+  assert.equal(solvedTeamSummaries[ids[teamCount - 1]].wipeStopped, true);
+
   await new Promise((resolve) => setTimeout(resolve, 400));
   const persistedTeams = JSON.parse(await fs.readFile(path.join(dataDir, 'teams.json'), 'utf8'));
-  assert.equal(Object.keys(persistedTeams).length, 50);
+  assert.equal(Object.keys(persistedTeams).length, teamCount);
   assert.equal(persistedTeams[ids[0]].events[0].type, 'LOAD_TEST');
 
   const updateResponse = await fetch(`${baseUrl}/api/teams/${ids[0]}/status`, {
@@ -176,5 +218,5 @@ test('serves 50 concurrent teams and shows every team in the GM dashboard', asyn
   assert.equal(await fs.access(path.join(dataDir, 'teams.json.tmp')).then(() => true, () => false), false);
 
   await fetch(`${baseUrl}/api/gm/logout`, { method: 'POST', headers: authHeaders });
-  console.log(`50-team load test completed in ${Date.now() - startedAt}ms; all teams rendered in GM dashboard.`);
+  console.log(`${teamCount}-team load test completed in ${Date.now() - startedAt}ms; every team rendered and GM controls passed.`);
 });
