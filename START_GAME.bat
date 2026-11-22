@@ -1,8 +1,9 @@
 @echo off
-title THE EPOCH - EscapeServer
+title THE EPOCH - SWExPRESIDENCY UNIVERSITY EVENT
 color 0b
 echo ================================================================
-echo   THE EPOCH -- EPOCHCORP ESCAPE SERVER
+echo   THE EPOCH -- SWExPRESIDENCY UNIVERSITY EVENT
+echo   EVENT USE ONLY
 echo   Starting local station server...
 echo ================================================================
 cd /d "%~dp0"

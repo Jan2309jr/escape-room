@@ -1,6 +1,8 @@
 # THE EPOCH — Tech Investigation Escape Room
 
 > **A story-driven, technology-themed escape room combining web-based investigation, coding, networking, CCTV analysis, physical evidence, and real-time team gameplay.**
+>
+> **SWExPRESIDENCY UNIVERSITY EVENT ONLY:** This project was created exclusively for the SWExPRESIDENCY UNIVERSITY EVENT. It is not intended for any other event, product, or independent use.
 
 ---
 
@@ -23,28 +25,23 @@ The game was designed to be:
 
 ---
 
-## 🏆 Created for ANVIKSHA 3.o
+## 🏆 Created for the SWExPRESIDENCY UNIVERSITY EVENT
 
-**THE EPOCH was conceptualized, developed, tested, and deployed specifically for ANVIKSHA**, a college technical event organized by us.
+**THE EPOCH was developed specifically for the SWExPRESIDENCY UNIVERSITY EVENT.** The experience is intended only as part of this event.
 
-The goal was to create a technical event that felt more like an **interactive investigation** than a conventional coding or quiz competition.
+The goal is to create an **interactive investigation** combining technical challenges with a connected story, rather than a conventional coding or quiz competition.
 
-Participants were given a fixed amount of time to investigate the incident, solve interconnected challenges, collect evidence, and reach a final conclusion.
+Participants investigate the incident, solve interconnected challenges, collect evidence, and reach a final conclusion within the event's scheduled play period.
 
-### Event Result
-
-The event was successfully conducted with **15+ participating teams**.
-
-Teams simultaneously interacted with the deployed game from separate computers while using physical investigation material provided as part of the experience.
+### Event Format
 
 ```text
-Event        : ANVIKSHA
+Event        : SWExPRESIDENCY UNIVERSITY EVENT
 Experience   : THE EPOCH
 Format       : Tech Investigation Escape Room
-Participation: 15+ Teams
+Participation: Team-based
 Gameplay     : Digital + Physical
-Duration     : 60 Minutes
-Status       : Successfully Conducted
+Use          : This event only
 ```
 
 ---
@@ -235,7 +232,7 @@ This created a physical-digital bridge:
 
 ## 📄 Physical Props Documentation
 
-The physical materials used during the ANVIKSHA event can be included in this repository as supplementary documentation.
+Physical materials prepared for the SWExPRESIDENCY UNIVERSITY EVENT can be included in this repository as supplementary documentation.
 
 Recommended structure:
 
@@ -327,7 +324,7 @@ The GM event log can show the latest 500 events across all teams or filter by te
 
 ## 🔒 Anti-Cheating & Fair Play System
 
-Since THE EPOCH was played simultaneously by 15+ teams in a live, competitive setting, a dedicated fair-play system was built to protect the integrity of the investigation.
+The game includes a dedicated fair-play system to help organizers protect the integrity of the live investigation.
 
 ### Fullscreen & Tab-Switch Detection
 
@@ -429,12 +426,13 @@ Event logs and team submissions are served only through Game Master-authenticate
 ## 📁 Project Structure
 
 ```text
-EscapeTheServer-TheEpoch-FINAL/
+escape-room/
 │
 ├── assets/
 │   ├── boarding_gate_list.png
 │   ├── cam_cctv.mp4
-│   └── parking.jpeg
+│   ├── parking.jpeg
+│   └── recovery_code_console.html
 │
 ├── css/
 │   ├── components.css
@@ -442,9 +440,6 @@ EscapeTheServer-TheEpoch-FINAL/
 │
 ├── data/
 │   └── teams.json
-│
-├── docs/
-│   └── THE_EPOCH_Physical_Props.pdf
 │
 ├── js/
 │   ├── components/
@@ -455,6 +450,7 @@ EscapeTheServer-TheEpoch-FINAL/
 │   │   ├── restoreViewer.js
 │   │   ├── serverFolderViewer.js
 │   │   ├── suspectsDbViewer.js
+│   │   ├── suspectsSql.mjs
 │   │   └── terminal.js
 │   │
 │   ├── data/
@@ -463,11 +459,20 @@ EscapeTheServer-TheEpoch-FINAL/
 │   │
 │   ├── app.js
 │   ├── audio.js
+│   ├── fullscreen-controller.mjs
+│   ├── gm-dashboard.mjs
 │   └── state.js
 │
+├── test/
+│   ├── fullscreen.test.mjs
+│   ├── load.test.mjs
+│   └── suspects-sql.test.mjs
+│
+├── Dockerfile
 ├── index.html
 ├── package.json
 ├── package-lock.json
+├── README.md
 ├── server.js
 ├── START_GAME.bat
 └── .gitignore
@@ -477,7 +482,7 @@ EscapeTheServer-TheEpoch-FINAL/
 
 ## 🧪 Testing & Event Validation
 
-The application was tested across the complete gameplay flow before the live event.
+Run the automated checks with `npm test`. Before the event, organizers should also verify the full player flow on the actual host, network, and devices.
 
 Testing covered:
 
@@ -499,7 +504,7 @@ Testing covered:
 - Final restoration
 - Deployment and hosted gameplay
 
-The final system was successfully deployed and used during the ANVIKSHA event with 15+ teams.
+The application is designed for event-hosted gameplay. Validate the selected host, network, and Game Master access before the SWExPRESIDENCY UNIVERSITY EVENT.
 
 ---
 
@@ -507,23 +512,21 @@ The final system was successfully deployed and used during the ANVIKSHA event wi
 
 ### Prerequisites
 
-Install:
+#### For players
 
-- Node.js
-- npm
-- A modern web browser
+- The game URL from the event organizers and a modern browser with JavaScript enabled
+- A unique team ID for the team's station; teams on separate stations must not share IDs
+- The in-game authentication password and any physical evidence/props provided by the event organizers
 
-### Clone the Repository
+#### To host the game
 
-```bash
-git clone https://github.com/vanshikagoel02/escapetheserver.git
-```
+- **Node.js 22** (the version used by the included Dockerfile) and its bundled **npm**
+- A host machine with port **3000** available, or configure the `PORT` environment variable
+- A unique **`GM_PASSWORD`** environment variable; it is required to start the server and access Game Master controls
+- For multiple player stations, a shared local network and the host machine's LAN address
+- Internet access if the browser needs to download the Google Fonts used by the interface
 
-Navigate to the project:
-
-```bash
-cd escapetheserver
-```
+Obtain the repository URL from the SWExPRESIDENCY UNIVERSITY EVENT organizers, clone it, and open the resulting project folder before proceeding.
 
 ### Install Dependencies
 
@@ -641,7 +644,7 @@ DEPLOYMENT
 LIVE EVENT
 ```
 
-The final experience was successfully conducted with 15+ teams at ANVIKSHA.
+The project is prepared as the digital component of the SWExPRESIDENCY UNIVERSITY EVENT.
 
 This project therefore involved not only software development, but also:
 
@@ -681,7 +684,7 @@ Potential future versions of THE EPOCH could include:
 
 ## 📜 Disclaimer
 
-THE EPOCH is a fictional investigation and escape-room experience created for educational and entertainment purposes as part of the ANVIKSHA college event.
+THE EPOCH is a fictional investigation and escape-room experience created exclusively for the SWExPRESIDENCY UNIVERSITY EVENT. It is not intended for use outside this event.
 
 The characters, organizations, records, incidents, and investigation scenario presented within the game are fictional.
 

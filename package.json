@@ -1,7 +1,7 @@
 {
   "name": "the-epoch-escape-server",
   "version": "2.0.0",
-  "description": "THE EPOCH - EPOCHCORP EscapeServer Host",
+  "description": "THE EPOCH - escape-room experience created exclusively for the SWExPRESIDENCY UNIVERSITY EVENT",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,6 +15,5 @@
     "cybersecurity",
     "forensics"
   ],
-  "author": "Escape Game Team",
-  "license": "ISC"
+  "license": "UNLICENSED"
 }
