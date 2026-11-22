@@ -35,7 +35,7 @@ export class TerminalComponent {
     const recovery = gameState.isRecoveryCodeSolved();
     const cctv = gameState.isCctvFullyViewed();
 
-    let nextStep = 'Open suspects_db and finalize any 1 suspect (Slot 1 of 3).';
+    let nextStep = 'Open suspects_db, query its records, and finalize any 1 suspect (Slot 1 of 3).';
     if (count >= 1 && !recovery) nextStep = 'Open SERVER → recovery_code and correct the faults.';
     else if (count === 1 && recovery) nextStep = 'Return to suspects_db and finalize your 2nd suspect (Slot 2 of 3).';
     else if (count >= 2 && !nettrace) nextStep = 'Open SERVER → nettrace and trace the intrusion.';
@@ -70,7 +70,7 @@ export class TerminalComponent {
           <div class="term-banner">
 ========================================================================
  EPOCHCORP — INCIDENT INVESTIGATION CONSOLE
- SUSPECT CLEARANCE IS HANDLED VIA suspects_db (checkbox + FINALIZE)
+ SUSPECT CLEARANCE: QUERY suspects_db, SELECT A RECORD, THEN FINALIZE
  TYPE 'help' FOR AVAILABLE SYSTEM COMMANDS
 ========================================================================
           </div>
@@ -130,8 +130,8 @@ export class TerminalComponent {
   trace <ip>           - Perform endpoint diagnostic trace (flavor only)
   clear_screen / cls   - Clear terminal logs
 
-NOTE: Suspect clearance is done in suspects_db (checkboxes + FINALIZE),
-not from this terminal.`);
+NOTE: Query the suspects_db SQL console to inspect records, then select and
+finalize a record there.`);
         break;
 
       case 'status':

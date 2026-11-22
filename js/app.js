@@ -63,6 +63,7 @@ class DesktopApp {
       }
       if (event === 'VIOLATION_CLEARED') {
         this.hideViolationOverlay();
+        this.fullscreenController.requestAfterUnlock();
       }
     });
   }

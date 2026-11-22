@@ -1,26 +1,22 @@
-/**
- * THE EPOCH - suspects_db
- * 10 dossiers. Participants may check exactly ONE box at a time (single
- * select), then click FINALIZE. ANY suspect (main or witness) may be
- * finalized into any of the 3 open slots — there is no "wrong suspect"
- * block. Correctness is judged manually by the GM afterward; every
- * finalization is timestamped and logged. Once finalized, a suspect can
- * never be re-selected or changed.
- */
-
 import { gameState } from '../state.js';
 import { sound } from '../audio.js';
+import { executeSuspectsSql, SUSPECTS_SCHEMA } from './suspectsSql.mjs';
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 export class SuspectsDbViewerComponent {
   constructor(container) {
     this.container = container;
-    this.pendingId = null; // single selected-but-not-finalized suspect id
-    this.errorMsg = '';
-    this.selectedForDetail = '02';
-    this.init();
-  }
-
-  init() {
+    this.database = 'epochcorp';
+    this.selectedId = null;
+    this.entries = [];
     this.render();
     this.bindEvents();
 
@@ -33,148 +29,190 @@ export class SuspectsDbViewerComponent {
   }
 
   render() {
-    const all = gameState.getAllSuspects();
-    const cleared = all.filter(s => s.finalization).sort((a, b) => a.finalization.slot - b.finalization.slot);
-    const uncleared = all.filter(s => !s.finalization);
     const count = gameState.getFinalizedCount();
-    const detail = gameState.getSuspect(this.selectedForDetail) || uncleared[0] || all[0];
-
     this.container.innerHTML = `
-      <div class="sdb-layout">
-        <!-- Left: dossier grid -->
-        <div class="sdb-grid-column">
-          <div class="sdb-header">
-            <span class="folder-title-tag">🗂️ /suspects_db — 10 PERSONNEL RECORDS</span>
-            <span class="sdb-stage-hint">${this.stageHintText(count)}</span>
-          </div>
-
-          <div class="sdb-cards-scroll">
-            ${uncleared.length === 0 ? `<div class="sdb-empty">All 3 clearance slots are finalized. Continue to the Final Investigation console.</div>` : ''}
-            ${uncleared.map(s => this.renderCard(s)).join('')}
-          </div>
-
-          <div class="sdb-finalize-bar ${!this.pendingId ? 'hidden' : ''}">
-            <span>1 suspect selected — finalizing cannot be undone.</span>
-            <button id="sdb-finalize-btn" class="sdb-finalize-btn">FINALIZE</button>
-          </div>
-
-          ${this.errorMsg ? `<div class="sdb-global-error">⚠ ${this.errorMsg}</div>` : ''}
-
-          ${cleared.length > 0 ? `
-            <div class="sdb-cleared-section">
-              <div class="sdb-cleared-title">FINALIZED (${cleared.length}/3)</div>
-              ${cleared.map(s => `
-                <div class="sdb-cleared-row">
-                  <span class="sdb-cleared-slot">Slot ${s.finalization.slot}</span>
-                  <span class="sdb-cleared-name">${s.name}</span>
-                  <span class="sdb-cleared-time">Finalized at: ${s.finalization.timestamp}</span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
+      <div class="sdb-sql-layout">
+        <div class="sdb-sql-heading">
+          <span class="folder-title-tag">/suspects_db — READ-ONLY MYSQL CONSOLE</span>
+          <span class="sdb-stage-hint">SLOT ${Math.min(count + 1, 3)} OF 3</span>
         </div>
 
-        <!-- Right: dossier detail preview -->
-        <div class="sdb-detail-column">
-          ${detail ? this.renderDetail(detail) : ''}
-        </div>
+        <section class="sdb-schema-panel" aria-label="Suspect table schema">
+          <div class="sdb-sql-section-title">TABLE SCHEMA — ${this.database}.suspects</div>
+          <div class="sdb-schema-scroll">
+            <table class="cyber-table sdb-schema-table">
+              <thead><tr><th>FIELD</th><th>TYPE</th><th>NULL</th><th>KEY</th></tr></thead>
+              <tbody>
+                ${SUSPECTS_SCHEMA.map(column => `
+                  <tr>
+                    <td><code>${escapeHtml(column.name)}</code></td>
+                    <td>${escapeHtml(column.type)}</td>
+                    <td>${column.nullable ? 'YES' : 'NO'}</td>
+                    <td>${column.key || ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="sdb-schema-caption"><strong>TABLE NAME: suspects</strong> · 10 personnel records · read-only access</div>
+        </section>
+
+        <details class="sdb-sql-help">
+          <summary>SQL COMMAND REFERENCE</summary>
+          <div class="sdb-sql-help-content">
+            <div><code>HELP;</code> · <code>SHOW DATABASES;</code> · <code>USE epochcorp;</code> · <code>SELECT DATABASE();</code></div>
+            <div><code>SHOW TABLES;</code> · <code>DESCRIBE suspects;</code> · <code>SHOW COLUMNS FROM suspects;</code></div>
+            <div><code>SHOW CREATE TABLE suspects;</code></div>
+            <div><code>SELECT * FROM suspects;</code></div>
+            <div><code>SELECT * FROM epochcorp.suspects;</code> (fully qualified)</div>
+            <div><code>SELECT id, name, type FROM suspects WHERE type = 'MAIN';</code></div>
+            <div><code>SELECT name, role FROM suspects WHERE name LIKE '%Ram%' ORDER BY name ASC LIMIT 5;</code></div>
+            <small>SELECT supports column lists, WHERE comparisons (=, !=, &lt;&gt;, &gt;, &lt;, &gt;=, &lt;=, LIKE) joined with AND, ORDER BY, and LIMIT. Data-changing commands are disabled.</small>
+          </div>
+        </details>
+
+        <section class="sdb-sql-terminal" aria-label="SQL command line">
+          <div class="sdb-sql-terminal-bar">
+            <span>mysql&gt; investigator@${escapeHtml(this.database)}</span>
+            <span>CONNECTED · READ ONLY</span>
+          </div>
+          <div class="sdb-sql-output" aria-live="polite">
+            ${this.entries.map(entry => `
+              <div class="sdb-sql-entry">
+                ${entry.command ? `<div class="sdb-sql-command">mysql&gt; ${escapeHtml(entry.command)}</div>` : ''}
+                ${entry.message ? `<div class="${entry.error ? 'sdb-sql-error' : 'sdb-sql-message'}">${escapeHtml(entry.message)}</div>` : ''}
+                ${entry.result ? this.renderResult(entry.result) : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div class="sdb-sql-input-row">
+            <label for="sdb-sql-input">mysql&gt;</label>
+            <input id="sdb-sql-input" type="text" autocomplete="off" spellcheck="false"
+              placeholder="Try: SELECT * FROM suspects;" aria-label="SQL command">
+            <button id="sdb-sql-run" class="term-btn-small">RUN</button>
+          </div>
+          <div class="sdb-finalize-bar ${this.selectedId ? '' : 'hidden'}" id="sdb-finalize-bar">
+            <span>Record selected — finalizing cannot be undone.</span>
+            <button id="sdb-finalize-btn" class="sdb-finalize-btn">FINALIZE RECORD</button>
+          </div>
+        </section>
       </div>
     `;
   }
 
-  stageHintText(count) {
-    if (count >= 3) return 'ALL SLOTS FINALIZED — proceed to Final Investigation';
-    if (count === 2) {
-      return gameState.canFinalizeThirdSlot()
-        ? 'SLOT 3 OF 3 — select any suspect to finalize'
-        : 'SLOT 3 LOCKED — solve nettrace and watch both CCTV cameras first';
-    }
-    return `SLOT ${count + 1} OF 3 — select any suspect to finalize`;
-  }
-
-  renderCard(s) {
-    const checked = this.pendingId === s.id;
+  renderResult(result) {
+    if (!result.columns.length) return '';
+    const selectable = result.selectable && result.rows.length > 0;
     return `
-      <label class="sdb-card ${checked ? 'checked' : ''}" data-id="${s.id}">
-        <input type="checkbox" class="sdb-checkbox" data-id="${s.id}" ${checked ? 'checked' : ''}>
-        <div class="sdb-card-body">
-          <div class="sdb-card-top">
-            <span class="sdb-code-tag">${s.code}</span>
-            <span class="sdb-type-tag">${s.stamp}</span>
-          </div>
-          <div class="sdb-card-name">${s.name}</div>
-          <div class="sdb-card-role">${s.role}</div>
-        </div>
-        <button class="sdb-view-btn" data-view="${s.id}" title="View dossier">VIEW ▸</button>
-      </label>
-    `;
-  }
-
-  renderDetail(s) {
-    return `
-      <div class="sdb-dossier-sheet">
-        <div class="sdb-dossier-header">
-          <span class="sdb-code-tag">${s.code}</span>
-          <span class="sdb-type-tag">${s.stamp}</span>
-        </div>
-        <h2 class="sdb-dossier-name">${s.name}</h2>
-        <div class="sdb-dossier-role">${s.role}</div>
-
-        <div class="sdb-dossier-block"><strong>Last Seen:</strong> ${s.lastSeen}</div>
-        <div class="sdb-dossier-block"><strong>Alibi:</strong> ${s.alibi}</div>
-        <div class="sdb-dossier-block"><strong>Motive:</strong> ${s.motive}</div>
-        ${s.notes ? `<div class="sdb-dossier-block lead"><strong>Investigator's Notes:</strong> ${s.notes}</div>` : ''}
-
-        ${s.finalization ? `
-          <div class="sdb-dossier-status cleared">
-            FINALIZED (Slot ${s.finalization.slot}) — at ${s.finalization.timestamp}
-          </div>
-        ` : ''}
+      <div class="sdb-sql-result-scroll">
+        <table class="cyber-table sdb-sql-result-table">
+          <thead>
+            <tr>${selectable ? '<th>SELECT</th>' : ''}
+              ${result.columns.map(column => `<th>${escapeHtml(column)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${result.rows.length ? result.rows.map(row => `
+              <tr class="${selectable ? `sdb-selectable-row ${this.selectedId === row.suspectId ? 'selected' : ''}` : ''}"
+                ${selectable ? `data-suspect-id="${escapeHtml(row.suspectId)}" tabindex="0" aria-label="Select ${escapeHtml(row.values.name || `record ${row.suspectId}`)}"` : ''}>
+                ${selectable ? `<td><input type="radio" name="sdb-record-select" class="sdb-record-select" data-id="${escapeHtml(row.suspectId)}" aria-label="Select record ${escapeHtml(row.suspectId)}" ${gameState.isSuspectFinalized(row.suspectId) ? 'disabled title="Already finalized"' : ''} ${this.selectedId === row.suspectId ? 'checked' : ''}></td>` : ''}
+                ${result.columns.map(column => `<td>${escapeHtml(row.values[column] ?? 'NULL')}</td>`).join('')}
+              </tr>
+            `).join('') : `<tr><td colspan="${result.columns.length + (selectable ? 1 : 0)}">Empty set (0 rows)</td></tr>`}
+          </tbody>
+        </table>
       </div>
     `;
   }
 
   bindEvents() {
-    this.container.querySelectorAll('.sdb-checkbox').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const id = cb.getAttribute('data-id');
-        // Single-select: checking one box unchecks any other pending box.
-        this.pendingId = cb.checked ? id : null;
-        this.errorMsg = '';
-        sound.playKeyClick();
-        this.render();
-        this.bindEvents();
+    const input = this.container.querySelector('#sdb-sql-input');
+    const runButton = this.container.querySelector('#sdb-sql-run');
+    if (input) {
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') this.execute(input);
+      });
+    }
+    if (runButton && input) runButton.addEventListener('click', () => this.execute(input));
+
+    this.container.querySelectorAll('.sdb-record-select').forEach(radio => {
+      radio.addEventListener('change', () => {
+        this.selectRecord(radio);
       });
     });
 
-    this.container.querySelectorAll('.sdb-view-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.selectedForDetail = btn.getAttribute('data-view');
-        sound.playKeyClick();
-        this.render();
-        this.bindEvents();
+    this.container.querySelectorAll('.sdb-selectable-row').forEach(row => {
+      const selectRow = () => {
+        const radio = row.querySelector('.sdb-record-select');
+        if (radio) this.selectRecord(radio);
+      };
+      row.addEventListener('click', selectRow);
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectRow();
+        }
       });
     });
 
-    const finalizeBtn = this.container.querySelector('#sdb-finalize-btn');
-    if (finalizeBtn) {
-      finalizeBtn.addEventListener('click', () => {
-        if (!this.pendingId) return;
-        const res = gameState.finalizeSuspect(this.pendingId);
-        if (res.success) {
+    const finalizeButton = this.container.querySelector('#sdb-finalize-btn');
+    if (finalizeButton) {
+      finalizeButton.addEventListener('click', () => {
+        if (!this.selectedId) return;
+        const result = gameState.finalizeSuspect(this.selectedId);
+        if (result.success) {
           sound.playUnlockLevel();
-          this.pendingId = null;
-          this.errorMsg = '';
-        } else if (!res.alreadyFinalized) {
-          this.errorMsg = res.message;
+          this.selectedId = null;
+          this.entries.push({ command: '', message: result.message, error: false });
+        } else if (result.alreadyFinalized) {
+          this.selectedId = null;
+          this.entries.push({ command: '', message: result.message, error: true });
           sound.playError();
         } else {
-          this.pendingId = null;
+          this.entries.push({ command: '', message: result.message, error: true });
+          sound.playError();
         }
         this.render();
         this.bindEvents();
       });
     }
+  }
+
+  selectRecord(radio) {
+    if (radio.disabled) return;
+    this.selectedId = radio.getAttribute('data-id');
+    this.container.querySelectorAll('.sdb-record-select').forEach(choice => {
+      choice.checked = choice === radio;
+    });
+    this.container.querySelectorAll('.sdb-selectable-row').forEach(row => {
+      row.classList.toggle('selected', row.getAttribute('data-suspect-id') === this.selectedId);
+    });
+    const finalizeBar = this.container.querySelector('#sdb-finalize-bar');
+    if (finalizeBar) finalizeBar.classList.remove('hidden');
+  }
+
+  execute(input) {
+    const command = input.value.trim();
+    if (!command) return;
+    input.value = '';
+    this.selectedId = null;
+
+    try {
+      const result = executeSuspectsSql(command, gameState.getAllSuspects(), this.database);
+      this.database = result.database;
+      this.entries.push({ command, message: result.message, result, error: false });
+    } catch (error) {
+      this.entries.push({ command, message: `ERROR: INVALID COMMAND — ${error.message}`, error: true });
+      sound.playError();
+    }
+
+    this.entries = this.entries.slice(-12);
+    this.render();
+    this.bindEvents();
+    const output = this.container.querySelector('.sdb-sql-output');
+    if (output) output.scrollTop = output.scrollHeight;
+    const nextInput = this.container.querySelector('#sdb-sql-input');
+    if (nextInput) nextInput.focus();
+    sound.playKeyClick();
   }
 }

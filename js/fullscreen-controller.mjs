@@ -4,17 +4,33 @@ export class FullscreenController {
     this.element = element;
     this.onError = onError;
     this.requestPending = false;
+    this.gestureHandler = null;
   }
 
   bindUserGestures() {
-    this.document.addEventListener('pointerdown', () => this.request(), { once: true });
-    this.document.addEventListener('keydown', () => this.request(), { once: true });
+    if (this.gestureHandler) return;
+    this.gestureHandler = () => this.request();
+    this.document.addEventListener('pointerdown', this.gestureHandler);
+    this.document.addEventListener('keydown', this.gestureHandler);
+  }
+
+  unbindUserGestures() {
+    if (!this.gestureHandler || typeof this.document.removeEventListener !== 'function') return;
+    this.document.removeEventListener('pointerdown', this.gestureHandler);
+    this.document.removeEventListener('keydown', this.gestureHandler);
+    this.gestureHandler = null;
+  }
+
+  requestAfterUnlock() {
+    this.bindUserGestures();
+    this.request();
   }
 
   bindExitDetection(onExit) {
     let wasFullscreen = Boolean(this.document.fullscreenElement);
     this.document.addEventListener('fullscreenchange', () => {
       const isFullscreen = Boolean(this.document.fullscreenElement);
+      if (isFullscreen) this.unbindUserGestures();
       if (wasFullscreen && !isFullscreen) onExit();
       wasFullscreen = isFullscreen;
     });
@@ -38,7 +54,10 @@ export class FullscreenController {
     }
 
     Promise.resolve(request)
-      .then(() => { this.requestPending = false; })
+      .then(() => {
+        this.requestPending = false;
+        if (this.document.fullscreenElement) this.unbindUserGestures();
+      })
       .catch((error) => {
         this.requestPending = false;
         this.onError(error);
