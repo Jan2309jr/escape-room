@@ -11,6 +11,17 @@ function formatStageName(stage) {
   return `STAGE ${stage}`;
 }
 
+function formatTimer(team) {
+  let seconds = Number(team.timerSeconds);
+  if (team.timerRunning && Number.isFinite(team.startTime)) {
+    seconds = Math.max(0, 3600 - Math.floor((Date.now() - team.startTime) / 1000));
+  }
+  if (!Number.isFinite(seconds)) seconds = 0;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+}
+
 export function renderTeamRows(teams) {
   return Object.entries(teams).map(([id, team]) => {
     const isHalted = team.gameHalted || (team.lastEvent && ['TAB_SWITCH_VIOLATION', 'FULLSCREEN_EXIT_VIOLATION'].includes(team.lastEvent.type));
@@ -31,6 +42,8 @@ export function renderTeamRows(teams) {
         <td><strong style="font-size: 14px; color: #fff;">${escapeHtml(id)}</strong></td>
         <td>${statusBadge}</td>
         <td><code>${escapeHtml(formatStageName(team.stage))}</code></td>
+        <td><code>${escapeHtml(formatTimer(team))}</code><br><small>${team.timerRunning === false ? 'PAUSED' : 'RUNNING'}</small></td>
+        <td><strong>${Number(team.finalizationCount) || 0} / 3</strong></td>
         <td>${haltInfo}</td>
         <td>${suspectInfo}</td>
         <td><code>${escapeHtml(team.lastUpdate || (team.lastEvent ? team.lastEvent.clock : '—'))}</code></td>

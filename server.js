@@ -30,7 +30,7 @@ gmSessionCleanup.unref();
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
 const TEAMS_FILE = path.join(DATA_DIR, 'teams.json');
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function getISTTimestamp(date = new Date()) {
   try {
@@ -366,8 +366,8 @@ app.post('/api/teams/:id/status', (req, res) => {
 });
 
 // GM action: Resume a halted team session
-app.post('/api/teams/:id/resume', requireGm, (req, res) => {
-  const id = req.params.id.toUpperCase();
+app.post('/api/teams/:id/resume', requireGm, validateTeamId, (req, res) => {
+  const id = req.teamId;
   const t = initTeam(id);
 
   t.gameHalted = false;
@@ -393,8 +393,8 @@ app.post('/api/teams/:id/resume', requireGm, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/teams/:id/control', requireGm, (req, res) => {
-  const id = req.params.id.toUpperCase();
+app.post('/api/teams/:id/control', requireGm, validateTeamId, (req, res) => {
+  const id = req.teamId;
   const team = initTeam(id);
   const { type, action } = req.body || {};
   const stageActions = ['RESET', 'SLOT1', 'SLOT2', 'NETTRACE_CCTV', 'SLOT3', 'FINAL', 'SOLVED'];
@@ -511,13 +511,13 @@ app.get('/api/teams', requireGm, (req, res) => {
 });
 
 // Full event history for a single team.
-app.get('/api/teams/:id', requireGm, (req, res) => {
-  const id = req.params.id.toUpperCase();
+app.get('/api/teams/:id', requireGm, validateTeamId, (req, res) => {
+  const id = req.teamId;
   res.json(teams[id] || initTeam(id));
 });
 
-app.get('/api/teams/:id/events', requireGm, (req, res) => {
-  const team = teams[req.params.id.toUpperCase()];
+app.get('/api/teams/:id/events', requireGm, validateTeamId, (req, res) => {
+  const team = teams[req.teamId];
   res.json(team ? team.events : []);
 });
 
@@ -540,8 +540,8 @@ app.get('/api/gm/solution', requireGm, (req, res) => {
 });
 
 // Organizer utility: clear a single team's server-side record.
-app.delete('/api/teams/:id', requireGm, (req, res) => {
-  const id = req.params.id.toUpperCase();
+app.delete('/api/teams/:id', requireGm, validateTeamId, (req, res) => {
+  const id = req.teamId;
   delete teams[id];
   persistTeams();
   res.json({ ok: true });

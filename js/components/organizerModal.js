@@ -143,6 +143,7 @@ export class OrganizerModalComponent {
       this.fetchAllTeams();
     }
     if (this.activeTab === 'log' && this.serverEvents === null) {
+      if (this.allTeamsData === null) this.fetchAllTeams(true);
       this.fetchTeamEvents();
     }
     if (this.activeTab === 'stage' && !this.solutionKey && !this.solutionKeyLoading) {
@@ -176,6 +177,8 @@ export class OrganizerModalComponent {
                 <th>Team ID</th>
                 <th>Status</th>
                 <th>Current Stage</th>
+                <th>Timer</th>
+                <th>Evidence Slots</th>
                 <th>Halt Details</th>
                 <th>Final Suspect</th>
                 <th>Last Activity</th>
@@ -184,7 +187,7 @@ export class OrganizerModalComponent {
             </thead>
             <tbody>
               ${teamEntries.length === 0 ? `
-                <tr><td colspan="7" style="text-align: center; padding: 20px;">No team sessions recorded yet. Launch participant browsers with <code>?team=TEAM01</code>.</td></tr>
+                <tr><td colspan="9" style="text-align: center; padding: 20px;">No team sessions recorded yet. Launch participant browsers with <code>?team=TEAM01</code>.</td></tr>
               ` : renderTeamRows(teams)}
             </tbody>
           </table>
@@ -415,6 +418,10 @@ export class OrganizerModalComponent {
       if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
       const data = await res.json();
       this.allTeamsData = data;
+      const teamIds = Object.keys(data).sort();
+      if (this.activeTab === 'stage' && !teamIds.includes(this.selectedControlTeamId)) {
+        this.selectedControlTeamId = teamIds[0] || '';
+      }
     } catch (e) {
       this.allTeamsData = false;
     }
