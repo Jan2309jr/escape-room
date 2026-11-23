@@ -24,6 +24,17 @@ test('returns only selected records and columns for a filtered SELECT', () => {
   assert.equal(result.selectable, true);
 });
 
+test('allows K. Verma to be selected as a suspect record', () => {
+  const result = executeSuspectsSql(
+    "SELECT id, name, role FROM suspects WHERE name LIKE '%Verma%';",
+    SUSPECTS
+  );
+  assert.equal(result.rows.length, 1);
+  assert.equal(result.rows[0].suspectId, '08');
+  assert.equal(result.rows[0].values.name, 'K. Verma');
+  assert.equal(result.selectable, true);
+});
+
 test('SELECT * returns every column and preserves record ids for selection', () => {
   const result = executeSuspectsSql('SELECT * FROM epochcorp.suspects;', SUSPECTS);
   assert.equal(result.rows.length, SUSPECTS.length);

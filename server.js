@@ -113,7 +113,8 @@ function validatePublicPayload(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if ('stage' in value && (!Number.isInteger(value.stage) || value.stage < 0 || value.stage > 6)) return false;
   if ('timerSeconds' in value && (!Number.isFinite(value.timerSeconds) || value.timerSeconds < 0 || value.timerSeconds > 3600)) return false;
-  if ('finalReasoning' in value && (typeof value.finalReasoning !== 'string' || value.finalReasoning.length > 20000)) return false;
+  if ('finalReasoning' in value && value.finalReasoning !== null &&
+      (typeof value.finalReasoning !== 'string' || value.finalReasoning.length > 20000)) return false;
   if ('haltReason' in value && typeof value.haltReason !== 'string') return false;
   if ('finalizations' in value && (!Array.isArray(value.finalizations) || value.finalizations.length > 3)) return false;
   if ('event' in value && value.event !== null) {
