@@ -147,6 +147,8 @@ function initTeam(id) {
       finalReasoning: null,
       finalSubmissionTimestamp: null,
       wipeStopped: false,
+      lastSeen: getISTTimestamp(),
+      lastSeenMs: Date.now(),
       events: [],
       lastEvent: null,
       lastUpdate: getISTTimestamp()
@@ -285,6 +287,8 @@ app.post('/api/event', (req, res) => {
   t.finalSubmissionTimestamp = finalSubmissionTimestamp !== undefined ? finalSubmissionTimestamp : t.finalSubmissionTimestamp;
   if (Array.isArray(finalizations)) t.finalizations = finalizations;
   t.lastUpdate = getISTTimestamp();
+  t.lastSeen = t.lastUpdate;
+  t.lastSeenMs = Date.now();
 
   if (event) {
     if (!event.clock) event.clock = getISTTimestamp();
@@ -304,9 +308,16 @@ app.get('/api/teams/:id/status', (req, res) => {
   if (allowedTeamIds && !allowedTeamIds.has(id)) {
     return res.status(403).json({ error: 'Team ID is not allowed.' });
   }
-  const t = teams[id];
+  let t;
+  try {
+    t = initTeam(id);
+  } catch (error) {
+    return res.status(503).json({ error: error.message });
+  }
+  t.lastSeen = getISTTimestamp();
+  t.lastSeenMs = Date.now();
   res.set('Cache-Control', 'no-store');
-  res.json(t ? {
+  res.json({
     teamId: t.teamId,
     stage: t.stage,
     startTime: t.startTime,
@@ -317,11 +328,9 @@ app.get('/api/teams/:id/status', (req, res) => {
     gameHalted: t.gameHalted,
     haltReason: t.haltReason,
     haltTimestamp: t.haltTimestamp,
-    lastUpdate: t.lastUpdate
-  } : {
-    teamId: id,
-    gameHalted: false,
-    gmCommand: null
+    lastUpdate: t.lastUpdate,
+    lastSeen: t.lastSeen,
+    lastSeenMs: t.lastSeenMs
   });
 });
 
@@ -356,6 +365,8 @@ app.post('/api/teams/:id/status', (req, res) => {
     finalReasoning: data.finalReasoning !== undefined ? data.finalReasoning : t.finalReasoning,
     finalSubmissionTimestamp: data.finalSubmissionTimestamp !== undefined ? data.finalSubmissionTimestamp : t.finalSubmissionTimestamp,
     wipeStopped: data.wipeStopped !== undefined ? data.wipeStopped : t.wipeStopped,
+    lastSeen: getISTTimestamp(),
+    lastSeenMs: Date.now(),
     lastUpdate: getISTTimestamp()
   });
 
@@ -501,6 +512,8 @@ app.get('/api/teams', requireGm, (req, res) => {
       finalSubmissionTimestamp: team.finalSubmissionTimestamp,
       wipeStopped: team.wipeStopped,
       lastUpdate: team.lastUpdate,
+      lastSeen: team.lastSeen || team.lastUpdate,
+      lastSeenMs: team.lastSeenMs || null,
       lastEvent: team.lastEvent ? {
         type: team.lastEvent.type,
         clock: team.lastEvent.clock

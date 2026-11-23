@@ -93,6 +93,7 @@ class GameState {
     this.data = this.loadState();
     this.initTimer();
     this.initServerPoll();
+    this.syncStatusToServer();
   }
 
   // ---------------- Team Identity ----------------
@@ -266,6 +267,7 @@ class GameState {
           this.pauseTimer();
           this.notify('TAB_SWITCH_VIOLATION', { timestamp: this.data.disqualifiedTimestamp, reason: this.data.disqualifiedReason });
         }
+        this.syncStatusToServer();
       } catch (e) {}
     }, 2500);
   }

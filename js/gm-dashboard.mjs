@@ -22,6 +22,11 @@ function formatTimer(team) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
+function isRecentlySeen(team) {
+  if (!Number.isFinite(team.lastSeenMs)) return false;
+  return Date.now() - team.lastSeenMs < 15000;
+}
+
 export function renderTeamRows(teams) {
   return Object.entries(teams).map(([id, team]) => {
     const isHalted = team.gameHalted || (team.lastEvent && ['TAB_SWITCH_VIOLATION', 'FULLSCREEN_EXIT_VIOLATION'].includes(team.lastEvent.type));
@@ -36,6 +41,9 @@ export function renderTeamRows(teams) {
     const suspectInfo = team.finalMurderer
       ? `<strong style="color:var(--accent-amber);">${escapeHtml(team.finalMurderer)}</strong><br><small style="color:var(--text-muted);">${escapeHtml(team.finalSubmissionTimestamp || 'Submitted')}</small>`
       : '<span style="color:var(--text-muted);">NOT SUBMITTED</span>';
+    const liveInfo = isRecentlySeen(team)
+      ? `<span style="color:var(--accent-green);">● LIVE</span><br><small>${escapeHtml(team.lastSeen || team.lastUpdate || '—')}</small>`
+      : `<span style="color:var(--text-muted);">● OFFLINE / INACTIVE</span><br><small>${escapeHtml(team.lastSeen || team.lastUpdate || '—')}</small>`;
 
     return `
       <tr class="${isHalted ? 'row-halted' : ''}">
@@ -44,6 +52,7 @@ export function renderTeamRows(teams) {
         <td><code>${escapeHtml(formatStageName(team.stage))}</code></td>
         <td><code>${escapeHtml(formatTimer(team))}</code><br><small>${team.timerRunning === false ? 'PAUSED' : 'RUNNING'}</small></td>
         <td><strong>${Number(team.finalizationCount) || 0} / 3</strong></td>
+        <td>${liveInfo}</td>
         <td>${haltInfo}</td>
         <td>${suspectInfo}</td>
         <td><code>${escapeHtml(team.lastUpdate || (team.lastEvent ? team.lastEvent.clock : '—'))}</code></td>

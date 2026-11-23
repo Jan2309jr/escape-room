@@ -113,6 +113,14 @@ test('serves 75 concurrent teams and lets the GM inspect and manage them', async
   ]);
   assert.deepEqual(Object.keys(teams).sort(), [...ids].sort());
   assert.deepEqual(Object.keys(submissions).sort(), [...ids].sort());
+  const presenceTeamId = 'DEPLOYED_TEAM_01';
+  const presenceResponse = await fetch(`${baseUrl}/api/teams/${presenceTeamId}/status`);
+  assert.equal(presenceResponse.status, 200);
+  const presenceTeam = await presenceResponse.json();
+  assert.equal(presenceTeam.teamId, presenceTeamId);
+  const presenceSummaries = await fetch(`${baseUrl}/api/teams`, { headers: authHeaders }).then((response) => response.json());
+  assert.equal(presenceSummaries[presenceTeamId].teamId, presenceTeamId);
+  await fetch(`${baseUrl}/api/teams/${presenceTeamId}`, { method: 'DELETE', headers: authHeaders });
   assert.equal(events.filter((event) => event.type === 'LOAD_TEST').length, teamCount);
   assert.equal(teams[ids[0]].events, undefined);
   assert.equal(teams[ids[0]].finalReasoning, undefined);
