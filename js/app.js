@@ -79,7 +79,9 @@ class DesktopApp {
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        gameState.triggerTabSwitchViolation();
+        setTimeout(() => {
+          if (document.hidden) gameState.triggerTabSwitchViolation();
+        }, 10000);
       }
     });
 
@@ -167,9 +169,18 @@ class DesktopApp {
     }
     if (teamIdSaveBtn && teamIdField) {
       teamIdSaveBtn.onclick = () => {
-        gameState.setTeamId(teamIdField.value);
-        if (teamIdStrip) teamIdStrip.classList.add('saved');
-        sound.playSuccess();
+        if (gameState.setTeamId(teamIdField.value)) {
+          if (teamIdStrip) teamIdStrip.classList.add('saved');
+          if (errorMsg) errorMsg.classList.add('hidden');
+          sound.playSuccess();
+        } else {
+          if (teamIdStrip) teamIdStrip.classList.remove('saved');
+          if (errorMsg) {
+            errorMsg.textContent = 'ENTER A VALID TEAM ID (letters, numbers, - or _).';
+            errorMsg.classList.remove('hidden');
+          }
+          sound.playError();
+        }
       };
     }
     if (gmControlBtn) {
@@ -181,6 +192,15 @@ class DesktopApp {
 
     if (loginBtn && pwdInput) {
       const doLogin = () => {
+        if (!gameState.hasTeamId()) {
+          if (errorMsg) {
+            errorMsg.textContent = 'ENTER AND SAVE YOUR TEAM ID BEFORE AUTHENTICATING.';
+            errorMsg.classList.remove('hidden');
+          }
+          teamIdField?.focus();
+          sound.playError();
+          return;
+        }
         const res = gameState.submitLoginPassword(pwdInput.value);
         if (!res.success) {
           if (errorMsg) {
@@ -412,7 +432,11 @@ class DesktopApp {
 
   bindGlobalEvents() {
     this.fullscreenController.bindUserGestures();
-    this.fullscreenController.bindExitDetection(() => gameState.triggerFullscreenExitViolation());
+    this.fullscreenController.bindExitDetection(() => {
+      setTimeout(() => {
+        if (!document.fullscreenElement) gameState.triggerFullscreenExitViolation();
+      }, 3000);
+    });
 
     document.addEventListener('fullscreenchange', () => {
       const fullscreenBtn = document.getElementById('taskbar-fs-btn');

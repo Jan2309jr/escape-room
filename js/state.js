@@ -59,6 +59,7 @@ const DEFAULT_STATE = {
   // Anti-cheat: tab-switch / app-switch violation
   disqualified: false,
   disqualifiedTimestamp: null,
+  disqualifiedTimestampMs: null,
   disqualifiedReason: null,
 
   // Terminal
@@ -99,14 +100,13 @@ class GameState {
   // ---------------- Team Identity ----------------
   loadTeamId() {
     try {
-      let id = localStorage.getItem(TEAM_ID_KEY);
-      if (!id) {
-        const params = new URLSearchParams(window.location.search);
-        id = params.get('team') || '';
-      }
-      return (id || 'TEAM01').trim().toUpperCase();
+      const params = new URLSearchParams(window.location.search);
+      let id = params.get('team') || '';
+      if (!id) id = localStorage.getItem(TEAM_ID_KEY) || '';
+      id = (id || '').trim().toUpperCase();
+      return /^[A-Z0-9_-]{1,64}$/.test(id) ? id : '';
     } catch (e) {
-      return 'TEAM01';
+      return '';
     }
   }
 
@@ -117,12 +117,18 @@ class GameState {
 
   setTeamId(id) {
     const clean = (id || '').trim().toUpperCase();
-    if (!clean) return;
+    if (!/^[A-Z0-9_-]{1,64}$/.test(clean)) return false;
     this.teamId = clean;
     try { localStorage.setItem(TEAM_ID_KEY, clean); } catch (e) {}
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('team', clean);
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    } catch (e) {}
     this.data = this.loadState();
     this.notify('TEAM_ID_SET', { teamId: clean });
     this.syncStatusToServer();
+    return true;
   }
 
   hasTeamId() {
@@ -190,6 +196,7 @@ class GameState {
   }
 
   syncEventToServer(entry) {
+    if (!this.teamId) return;
     try {
       fetch('/api/event', {
         method: 'POST',
@@ -200,6 +207,7 @@ class GameState {
           gameHalted: this.data.disqualified,
           haltReason: this.data.disqualifiedReason,
           haltTimestamp: this.data.disqualifiedTimestamp,
+          haltTimestampMs: this.data.disqualifiedTimestampMs,
           startTime: this.data.startTime,
           timerSeconds: this.data.timerSeconds,
           timerRunning: this.data.timerRunning,
@@ -215,6 +223,7 @@ class GameState {
   }
 
   syncStatusToServer() {
+    if (!this.teamId) return;
     try {
       fetch(`/api/teams/${this.teamId}/status`, {
         method: 'POST',
@@ -224,6 +233,7 @@ class GameState {
           gameHalted: this.data.disqualified,
           haltReason: this.data.disqualifiedReason,
           haltTimestamp: this.data.disqualifiedTimestamp,
+          haltTimestampMs: this.data.disqualifiedTimestampMs,
           startTime: this.data.startTime,
           timerSeconds: this.data.timerSeconds,
           timerRunning: this.data.timerRunning,
@@ -255,6 +265,7 @@ class GameState {
         if (serverTeam.gameHalted === false && this.data.disqualified) {
           this.data.disqualified = false;
           this.data.disqualifiedTimestamp = null;
+          this.data.disqualifiedTimestampMs = null;
           this.data.disqualifiedReason = null;
           this.resumeTimer();
           this.notify('VIOLATION_CLEARED', {});
@@ -437,6 +448,7 @@ class GameState {
     const timestamp = nowClock();
     this.data.disqualified = true;
     this.data.disqualifiedTimestamp = timestamp;
+    this.data.disqualifiedTimestampMs = Date.now();
     this.data.disqualifiedReason = reason;
     this.pauseTimer();
     sound.playError();
@@ -469,6 +481,7 @@ class GameState {
     const clearedReason = this.data.disqualifiedReason || 'gameplay';
     this.data.disqualified = false;
     this.data.disqualifiedTimestamp = null;
+    this.data.disqualifiedTimestampMs = null;
     this.data.disqualifiedReason = null;
     this.resumeTimer();
     this.addEvent('VIOLATION_CLEARED', `GM cleared the ${clearedReason} violation and resumed the game.`, { organizerAction: 'RESUME_GAME' });

@@ -113,6 +113,8 @@ function validatePublicPayload(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if ('stage' in value && (!Number.isInteger(value.stage) || value.stage < 0 || value.stage > 6)) return false;
   if ('timerSeconds' in value && (!Number.isFinite(value.timerSeconds) || value.timerSeconds < 0 || value.timerSeconds > 3600)) return false;
+  if ('haltTimestampMs' in value && value.haltTimestampMs !== null &&
+      (!Number.isFinite(value.haltTimestampMs) || value.haltTimestampMs < 0)) return false;
   if ('finalReasoning' in value && value.finalReasoning !== null &&
       (typeof value.finalReasoning !== 'string' || value.finalReasoning.length > 20000)) return false;
   if ('haltReason' in value && typeof value.haltReason !== 'string') return false;
@@ -142,6 +144,7 @@ function initTeam(id) {
       timerExpired: false,
       gmCommandId: 0,
       gmCommand: null,
+      gmResumeMs: null,
       finalizations: [],
       finalMurderer: null,
       finalReasoning: null,
@@ -267,7 +270,7 @@ app.post('/api/event', (req, res) => {
     return res.status(403).json({ error: 'Team ID is not allowed.' });
   }
 
-  const { stage, startTime, timerSeconds, timerRunning, timerExpired, event, gameHalted, haltReason, haltTimestamp, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = body;
+  const { stage, startTime, timerSeconds, timerRunning, timerExpired, event, gameHalted, haltReason, haltTimestamp, haltTimestampMs, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = body;
   let t;
   try {
     t = initTeam(id);
@@ -279,9 +282,14 @@ app.post('/api/event', (req, res) => {
   t.timerSeconds = timerSeconds !== undefined ? timerSeconds : t.timerSeconds;
   t.timerRunning = timerRunning !== undefined ? timerRunning : t.timerRunning;
   t.timerExpired = timerExpired !== undefined ? timerExpired : t.timerExpired;
-  t.gameHalted = gameHalted !== undefined ? gameHalted : t.gameHalted;
-  t.haltReason = haltReason !== undefined ? haltReason : t.haltReason;
-  t.haltTimestamp = haltTimestamp !== undefined ? haltTimestamp : t.haltTimestamp;
+  const staleHalt = gameHalted === true &&
+    Number.isFinite(t.gmResumeMs) &&
+    (!Number.isFinite(haltTimestampMs) || haltTimestampMs <= t.gmResumeMs);
+  if (!staleHalt) {
+    t.gameHalted = gameHalted !== undefined ? gameHalted : t.gameHalted;
+    t.haltReason = haltReason !== undefined ? haltReason : t.haltReason;
+    t.haltTimestamp = haltTimestamp !== undefined ? haltTimestamp : t.haltTimestamp;
+  }
   t.finalMurderer = finalMurderer !== undefined ? finalMurderer : t.finalMurderer;
   t.finalReasoning = finalReasoning !== undefined ? finalReasoning : t.finalReasoning;
   t.finalSubmissionTimestamp = finalSubmissionTimestamp !== undefined ? finalSubmissionTimestamp : t.finalSubmissionTimestamp;
@@ -352,11 +360,12 @@ app.post('/api/teams/:id/status', (req, res) => {
     return res.status(503).json({ error: error.message });
   }
 
+  const staleHalt = data.gameHalted === true &&
+    Number.isFinite(t.gmResumeMs) &&
+    (!Number.isFinite(data.haltTimestampMs) || data.haltTimestampMs <= t.gmResumeMs);
+
   Object.assign(t, {
     stage: data.stage !== undefined ? data.stage : t.stage,
-    gameHalted: data.gameHalted !== undefined ? data.gameHalted : t.gameHalted,
-    haltReason: data.haltReason !== undefined ? data.haltReason : t.haltReason,
-    haltTimestamp: data.haltTimestamp !== undefined ? data.haltTimestamp : t.haltTimestamp,
     startTime: data.startTime !== undefined ? data.startTime : t.startTime,
     timerSeconds: data.timerSeconds !== undefined ? data.timerSeconds : t.timerSeconds,
     timerRunning: data.timerRunning !== undefined ? data.timerRunning : t.timerRunning,
@@ -369,6 +378,11 @@ app.post('/api/teams/:id/status', (req, res) => {
     lastSeenMs: Date.now(),
     lastUpdate: getISTTimestamp()
   });
+  if (!staleHalt) {
+    t.gameHalted = data.gameHalted !== undefined ? data.gameHalted : t.gameHalted;
+    t.haltReason = data.haltReason !== undefined ? data.haltReason : t.haltReason;
+    t.haltTimestamp = data.haltTimestamp !== undefined ? data.haltTimestamp : t.haltTimestamp;
+  }
 
   if (Array.isArray(data.finalizations)) t.finalizations = data.finalizations;
 
@@ -384,6 +398,7 @@ app.post('/api/teams/:id/resume', requireGm, validateTeamId, (req, res) => {
   t.gameHalted = false;
   t.haltReason = null;
   t.haltTimestamp = null;
+  t.gmResumeMs = Date.now();
   t.lastUpdate = getISTTimestamp();
 
   const resumeEvent = {

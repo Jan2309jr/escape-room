@@ -7,11 +7,21 @@ test('players can solve the investigation from login through stopping the wipe',
     getItem: (key) => storage.get(key) || null,
     setItem: (key, value) => storage.set(key, value)
   };
-  globalThis.window = { location: { search: '?team=GAME_FLOW_TEST' } };
+  storage.set('EPOCH_TEAM_ID', 'STALE_TEAM');
+  globalThis.window = {
+    location: {
+      search: '?team=GAME_FLOW_TEST',
+      href: 'http://localhost:3000/?team=GAME_FLOW_TEST',
+      pathname: '/',
+      hash: ''
+    },
+    history: { replaceState() {} }
+  };
 
   const { sound } = await import('../js/audio.js');
   sound.muted = true;
   const { gameState } = await import('../js/state.js');
+  assert.equal(gameState.teamId, 'GAME_FLOW_TEST', 'URL team ID must override stale browser storage');
   context.after(() => {
     clearInterval(gameState.timerInterval);
     clearInterval(gameState.pollInterval);

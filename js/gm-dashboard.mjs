@@ -29,7 +29,7 @@ function isRecentlySeen(team) {
 
 export function renderTeamRows(teams) {
   return Object.entries(teams).map(([id, team]) => {
-    const isHalted = team.gameHalted || (team.lastEvent && ['TAB_SWITCH_VIOLATION', 'FULLSCREEN_EXIT_VIOLATION'].includes(team.lastEvent.type));
+    const isHalted = team.gameHalted === true;
     const statusBadge = isHalted
       ? '<span class="gm-status-badge halted">🚨 GAME HALTED</span>'
       : (team.stage === 6 || team.wipeStopped
