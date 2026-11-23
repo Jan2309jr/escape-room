@@ -554,6 +554,14 @@ GM_PASSWORD="use-a-unique-event-password" npm start
 For Render, set `GM_PASSWORD` in the service's environment variables. `START_GAME.bat` also requires this variable to be set in the environment from which it is launched.
 Use HTTPS for remote hosting: the built-in LAN server uses HTTP, which does not encrypt the GM password or session cookie in transit. To truly lock stations against switching, use an operating-system/browser kiosk configuration; a web page cannot enforce that restriction.
 
+For an event, configure these optional server environment variables:
+
+- `TEAM_IDS`: comma-separated team allowlist, for example `TEAM01,TEAM02,TEAM03`
+- `MAX_TEAMS`: maximum team records kept in memory and in `teams.json` (default: `500`)
+- `DATA_DIR`: persistent writable directory for `teams.json`
+
+On Render, attach a persistent store or mount for `DATA_DIR` only on a paid plan. The free plan has an ephemeral filesystem, so restarts and redeployments can lose team state. A free PostgreSQL database is also limited to 1 GB and expires after 30 days.
+
 ### Open
 
 ```text

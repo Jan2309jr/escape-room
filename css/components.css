@@ -3195,6 +3195,48 @@ tr.fw-hit td { color: var(--accent-amber); }
 
 /* ---------- Lock screen: minimal + team ID strip ---------- */
 .lock-card-minimal { padding-bottom: 24px; }
+.meera-cipher-puzzle {
+  width: 100%;
+  margin: 0 0 16px;
+  color: #fff;
+  text-align: center;
+}
+.meera-cipher-puzzle h1 {
+  margin: 0 0 16px;
+  font-family: var(--font-heading);
+  font-size: clamp(20px, 3vw, 28px);
+  line-height: 1.2;
+  font-weight: 700;
+}
+.meera-cipher-puzzle .cipher-text {
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 20px 12px;
+  border: 2px solid #ff6a00;
+  border-radius: 10px;
+  background: rgba(20, 20, 20, 0.72);
+  color: #ffc400;
+  font-family: var(--font-mono);
+  font-size: clamp(20px, 4vw, 34px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 5px;
+  text-shadow: 0 0 12px rgba(255, 196, 0, 0.35);
+  white-space: nowrap;
+}
+.meera-cipher-puzzle .cipher-name {
+  margin-bottom: 10px;
+  color: #ff7a00;
+  font-size: 18px;
+  font-weight: 800;
+}
+.meera-cipher-puzzle p {
+  margin: 0;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.55;
+  font-weight: 500;
+}
 .team-id-strip {
   display: flex; align-items: center; gap: 8px; justify-content: center;
   margin: 14px 0; padding: 8px 12px; border: 1px dashed var(--border-highlight);

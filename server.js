@@ -8,6 +8,24 @@ const PORT = process.env.PORT || 3000;
 const GM_PASSWORD = process.env.GM_PASSWORD;
 const GM_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 const gmSessions = new Map();
+const gmLoginAttempts = new Map();
+const TEAM_IDS = (process.env.TEAM_IDS || '')
+  .split(',')
+  .map((id) => id.trim().toUpperCase())
+  .filter(Boolean);
+const allowedTeamIds = TEAM_IDS.length > 0 ? new Set(TEAM_IDS) : null;
+const MAX_TEAMS = Number(process.env.MAX_TEAMS) || 500;
+
+const gmSessionCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [token, expiresAt] of gmSessions) {
+    if (expiresAt <= now) gmSessions.delete(token);
+  }
+  for (const [key, attempt] of gmLoginAttempts) {
+    if (attempt.resetAt <= now) gmLoginAttempts.delete(key);
+  }
+}, 60 * 1000);
+gmSessionCleanup.unref();
 
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
 const TEAMS_FILE = path.join(DATA_DIR, 'teams.json');
@@ -41,32 +59,76 @@ try {
 
 let saveTimeout = null;
 let persistenceQueue = Promise.resolve();
+
+function writeTeamsSnapshot() {
+  if (!saveTimeout) return persistenceQueue;
+  clearTimeout(saveTimeout);
+  saveTimeout = null;
+  const snapshot = JSON.stringify(teams, null, 2);
+  const tempFile = `${TEAMS_FILE}.tmp`;
+  persistenceQueue = persistenceQueue
+    .then(() => new Promise((resolve, reject) => {
+      fs.writeFile(tempFile, snapshot, (writeError) => {
+        if (writeError) {
+          reject(writeError);
+          return;
+        }
+        fs.rename(tempFile, TEAMS_FILE, (renameError) => {
+          if (renameError) reject(renameError);
+          else resolve();
+        });
+      });
+    }))
+    .catch((error) => {
+      console.error('Failed to persist teams.json', error);
+    });
+  return persistenceQueue;
+}
+
 function persistTeams() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
-    const snapshot = JSON.stringify(teams, null, 2);
-    const tempFile = `${TEAMS_FILE}.tmp`;
-    persistenceQueue = persistenceQueue
-      .then(() => new Promise((resolve, reject) => {
-        fs.writeFile(tempFile, snapshot, (writeError) => {
-          if (writeError) {
-            reject(writeError);
-            return;
-          }
-          fs.rename(tempFile, TEAMS_FILE, (renameError) => {
-            if (renameError) reject(renameError);
-            else resolve();
-          });
-        });
-      }))
-      .catch((error) => {
-        console.error('Failed to persist teams.json', error);
-      });
+    writeTeamsSnapshot();
   }, 300);
+}
+
+function normalizeTeamId(value) {
+  const id = (value || '').toString().trim().toUpperCase();
+  return /^[A-Z0-9_-]{1,64}$/.test(id) ? id : null;
+}
+
+function validateTeamId(req, res, next) {
+  const id = normalizeTeamId(req.params.id || req.body?.teamId);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid team ID.' });
+  }
+  if (allowedTeamIds && !allowedTeamIds.has(id)) {
+    return res.status(403).json({ error: 'Team ID is not allowed.' });
+  }
+  req.teamId = id;
+  next();
+}
+
+function validatePublicPayload(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if ('stage' in value && (!Number.isInteger(value.stage) || value.stage < 0 || value.stage > 6)) return false;
+  if ('timerSeconds' in value && (!Number.isFinite(value.timerSeconds) || value.timerSeconds < 0 || value.timerSeconds > 3600)) return false;
+  if ('finalReasoning' in value && (typeof value.finalReasoning !== 'string' || value.finalReasoning.length > 20000)) return false;
+  if ('haltReason' in value && typeof value.haltReason !== 'string') return false;
+  if ('finalizations' in value && (!Array.isArray(value.finalizations) || value.finalizations.length > 3)) return false;
+  if ('event' in value && value.event !== null) {
+    if (typeof value.event !== 'object' || Array.isArray(value.event)) return false;
+    if (value.event.type && (typeof value.event.type !== 'string' || value.event.type.length > 100)) return false;
+    if (value.event.message && (typeof value.event.message !== 'string' || value.event.message.length > 2000)) return false;
+  }
+  return true;
 }
 
 function initTeam(id) {
   if (!teams[id]) {
+    if (Object.keys(teams).length >= MAX_TEAMS) {
+      throw new Error('Team capacity reached.');
+    }
     teams[id] = {
       teamId: id,
       stage: 0,
@@ -92,7 +154,20 @@ function initTeam(id) {
   return teams[id];
 }
 
-app.use(express.json());
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+  });
+  if (process.env.NODE_ENV === 'production') {
+    res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  next();
+});
+app.use(express.json({ limit: '256kb' }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/css', express.static(path.join(__dirname, 'css')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
@@ -140,9 +215,20 @@ app.post('/api/gm/login', (req, res) => {
   }
 
   const password = req.body && typeof req.body.password === 'string' ? req.body.password : '';
+  const key = req.ip || 'unknown';
+  const now = Date.now();
+  const attempt = gmLoginAttempts.get(key);
+  if (attempt && attempt.resetAt > now && attempt.count >= 10) {
+    return res.status(429).json({ error: 'Too many login attempts. Try again later.' });
+  }
   if (!passwordsMatch(password, GM_PASSWORD)) {
+    gmLoginAttempts.set(key, {
+      count: ((attempt && attempt.resetAt > now ? attempt.count : 0) + 1),
+      resetAt: attempt && attempt.resetAt > now ? attempt.resetAt : now + 15 * 60 * 1000
+    });
     return res.status(401).json({ error: 'Incorrect GM password.' });
   }
+  gmLoginAttempts.delete(key);
 
   const token = crypto.randomBytes(32).toString('hex');
   gmSessions.set(token, Date.now() + GM_SESSION_DURATION_MS);
@@ -168,10 +254,23 @@ app.get('/api/status', (req, res) => {
 
 // Central multi-team event endpoint
 app.post('/api/event', (req, res) => {
-  const { teamId, stage, startTime, timerSeconds, timerRunning, timerExpired, event, gameHalted, haltReason, haltTimestamp, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = req.body || {};
-  const id = (teamId || 'UNASSIGNED').toString().toUpperCase();
+  const body = req.body || {};
+  if (!validatePublicPayload(body)) {
+    return res.status(400).json({ error: 'Invalid team event payload.' });
+  }
+  const id = normalizeTeamId(body.teamId);
+  if (!id) return res.status(400).json({ error: 'Invalid team ID.' });
+  if (allowedTeamIds && !allowedTeamIds.has(id)) {
+    return res.status(403).json({ error: 'Team ID is not allowed.' });
+  }
 
-  const t = initTeam(id);
+  const { stage, startTime, timerSeconds, timerRunning, timerExpired, event, gameHalted, haltReason, haltTimestamp, finalMurderer, finalReasoning, finalSubmissionTimestamp, finalizations } = body;
+  let t;
+  try {
+    t = initTeam(id);
+  } catch (error) {
+    return res.status(503).json({ error: error.message });
+  }
   t.stage = stage !== undefined ? stage : t.stage;
   t.startTime = startTime !== undefined ? startTime : t.startTime;
   t.timerSeconds = timerSeconds !== undefined ? timerSeconds : t.timerSeconds;
@@ -199,7 +298,12 @@ app.post('/api/event', (req, res) => {
 
 // Player clients only need halt state; private submissions and event logs stay GM-only.
 app.get('/api/teams/:id/status', (req, res) => {
-  const t = teams[req.params.id.toUpperCase()];
+  const id = normalizeTeamId(req.params.id);
+  if (!id) return res.status(400).json({ error: 'Invalid team ID.' });
+  if (allowedTeamIds && !allowedTeamIds.has(id)) {
+    return res.status(403).json({ error: 'Team ID is not allowed.' });
+  }
+  const t = teams[id];
   res.set('Cache-Control', 'no-store');
   res.json(t ? {
     teamId: t.teamId,
@@ -214,7 +318,7 @@ app.get('/api/teams/:id/status', (req, res) => {
     haltTimestamp: t.haltTimestamp,
     lastUpdate: t.lastUpdate
   } : {
-    teamId: req.params.id.toUpperCase(),
+    teamId: id,
     gameHalted: false,
     gmCommand: null
   });
@@ -222,9 +326,21 @@ app.get('/api/teams/:id/status', (req, res) => {
 
 // Sync full team status
 app.post('/api/teams/:id/status', (req, res) => {
-  const id = req.params.id.toUpperCase();
-  const t = initTeam(id);
+  const id = normalizeTeamId(req.params.id);
+  if (!id) return res.status(400).json({ error: 'Invalid team ID.' });
+  if (allowedTeamIds && !allowedTeamIds.has(id)) {
+    return res.status(403).json({ error: 'Team ID is not allowed.' });
+  }
   const data = req.body || {};
+  if (!validatePublicPayload(data)) {
+    return res.status(400).json({ error: 'Invalid team status payload.' });
+  }
+  let t;
+  try {
+    t = initTeam(id);
+  } catch (error) {
+    return res.status(503).json({ error: error.message });
+  }
 
   Object.assign(t, {
     stage: data.stage !== undefined ? data.stage : t.stage,
@@ -438,11 +554,22 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found.' });
 });
 
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({ error: 'Invalid JSON payload.' });
+  }
+  if (error && error.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request payload is too large.' });
+  }
+  console.error('Unhandled request error:', error);
+  res.status(500).json({ error: 'Internal server error.' });
+});
+
 if (!GM_PASSWORD) {
   console.warn('GM_PASSWORD is not set. GM login and organizer APIs will remain unavailable.');
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);
   console.log(` THE EPOCH — EPOCHCORP ESCAPE SERVER HOST`);
   console.log(` Server active at: http://localhost:${PORT}`);
@@ -453,5 +580,24 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(` Press Ctrl+C to stop.`);
   console.log(`=======================================================`);
 });
+
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}; flushing team state.`);
+  await writeTeamsSnapshot();
+  server.close((error) => {
+    if (error) {
+      console.error('Error while closing the HTTP server:', error);
+      process.exit(1);
+    }
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10 * 1000).unref();
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
 
 
